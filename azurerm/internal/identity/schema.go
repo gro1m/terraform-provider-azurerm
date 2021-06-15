@@ -1,15 +1,17 @@
 package identity
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 )
 
-const none = "None"
-const systemAssigned = "SystemAssigned"
+const (
+	none           = "None"
+	systemAssigned = "SystemAssigned"
+	userAssigned   = "UserAssigned"
+)
 
-// TODO: support UserAssigned & SystemAssigned, UserAssigned
+// TODO: support SystemAssigned, UserAssigned
 // const systemAssignedUserAssigned = "SystemAssigned, UserAssigned"
-// const userAssigned = "UserAssigned"
 
 type ExpandedConfig struct {
 	// Type is the type of User Assigned Identity, either `None`, `SystemAssigned`, `UserAssigned`
@@ -23,5 +25,5 @@ type ExpandedConfig struct {
 type Identity interface {
 	Expand(input []interface{}) (*ExpandedConfig, error)
 	Flatten(input *ExpandedConfig) []interface{}
-	Schema() *schema.Schema
+	Schema() *pluginsdk.Schema
 }

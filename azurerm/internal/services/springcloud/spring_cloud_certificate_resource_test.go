@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/springcloud/parse"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/springcloud/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -22,11 +20,12 @@ func TestAccSpringCloudCertificate_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_spring_cloud_certificate", "test")
 	r := SpringCloudCertificateResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
+				check.That(data.ResourceName).Key("thumbprint").Exists(),
 			),
 		},
 		data.ImportStep("key_vault_certificate_id"),
@@ -37,10 +36,10 @@ func TestAccSpringCloudCertificate_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_spring_cloud_certificate", "test")
 	r := SpringCloudCertificateResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -48,7 +47,7 @@ func TestAccSpringCloudCertificate_requiresImport(t *testing.T) {
 	})
 }
 
-func (t SpringCloudCertificateResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t SpringCloudCertificateResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.SpringCloudCertificateID(state.ID)
 	if err != nil {
 		return nil, err
@@ -93,6 +92,8 @@ func (r SpringCloudCertificateResource) template(data acceptance.TestData) strin
 provider "azurerm" {
   features {}
 }
+
+provider "azuread" {}
 
 resource "azurerm_resource_group" "test" {
   name     = "acctestRG-spring-%d"

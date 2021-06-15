@@ -3,14 +3,14 @@ package monitor_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -21,10 +21,10 @@ func TestAccMonitorActionGroup_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -36,10 +36,10 @@ func TestAccMonitorActionGroup_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -54,10 +54,10 @@ func TestAccMonitorActionGroup_emailReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.emailReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -69,10 +69,10 @@ func TestAccMonitorActionGroup_itsmReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.itsmReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -84,10 +84,10 @@ func TestAccMonitorActionGroup_azureAppPushReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.azureAppPushReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -99,10 +99,10 @@ func TestAccMonitorActionGroup_smsReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.smsReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -114,10 +114,46 @@ func TestAccMonitorActionGroup_webhookReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.webhookReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+	})
+}
+
+func TestAccMonitorActionGroup_secureWebhookReceiver(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
+	r := MonitorActionGroupResource{}
+
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.basic(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+		{
+			Config: r.webhookReceiver(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+		{
+			Config: r.secureWebhookReceiver(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+		{
+			Config: r.basic(data),
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -129,10 +165,10 @@ func TestAccMonitorActionGroup_automationRunbookReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.automationRunbookReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -144,10 +180,10 @@ func TestAccMonitorActionGroup_voiceReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.voiceReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -159,10 +195,10 @@ func TestAccMonitorActionGroup_logicAppReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.logicAppReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -174,10 +210,10 @@ func TestAccMonitorActionGroup_azureFunctionReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.azureFunctionReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -189,10 +225,10 @@ func TestAccMonitorActionGroup_armRoleReceiver(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.armRoleReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -204,10 +240,10 @@ func TestAccMonitorActionGroup_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -219,10 +255,10 @@ func TestAccMonitorActionGroup_disabledUpdate(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.disabledBasic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("enabled").HasValue("false"),
 			),
@@ -230,7 +266,7 @@ func TestAccMonitorActionGroup_disabledUpdate(t *testing.T) {
 		data.ImportStep(),
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("enabled").HasValue("true"),
 			),
@@ -238,7 +274,7 @@ func TestAccMonitorActionGroup_disabledUpdate(t *testing.T) {
 		data.ImportStep(),
 		{
 			Config: r.disabledBasic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("enabled").HasValue("false"),
 			),
@@ -251,73 +287,73 @@ func TestAccMonitorActionGroup_singleReceiverUpdate(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.emailReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.itsmReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.azureAppPushReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.smsReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.webhookReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.automationRunbookReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.voiceReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.logicAppReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.azureFunctionReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.armRoleReceiver(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -329,24 +365,24 @@ func TestAccMonitorActionGroup_multipleReceiversUpdate(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_action_group", "test")
 	r := MonitorActionGroupResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -509,6 +545,45 @@ resource "azurerm_monitor_action_group" "test" {
   }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
+}
+
+func (MonitorActionGroupResource) secureWebhookReceiver(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "test" {
+  name     = "acctestRG-%d"
+  location = "%s"
+}
+
+data "azuread_application" "test" {
+  object_id = "%s"
+}
+
+resource "azurerm_monitor_action_group" "test" {
+  name                = "acctestActionGroup-%d"
+  resource_group_name = azurerm_resource_group.test.name
+  short_name          = "acctestag"
+
+  webhook_receiver {
+    name                    = "callmyapiaswell"
+    service_uri             = "http://example.com/alert"
+    use_common_alert_schema = true
+  }
+
+  webhook_receiver {
+    name                    = "callmysecureapi"
+    service_uri             = "http://secureExample.com/alert"
+    use_common_alert_schema = true
+    aad_auth {
+      object_id      = data.azuread_application.test.object_id
+      identifier_uri = data.azuread_application.test.identifier_uris[0]
+    }
+  }
+}
+`, data.RandomInteger, data.Locations.Primary, os.Getenv("ARM_APP_OBJECT_ID"), data.RandomInteger)
 }
 
 func (MonitorActionGroupResource) automationRunbookReceiver(data acceptance.TestData) string {
@@ -913,7 +988,7 @@ resource "azurerm_monitor_action_group" "test" {
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
 }
 
-func (t MonitorActionGroupResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t MonitorActionGroupResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := azure.ParseAzureResourceID(state.ID)
 	if err != nil {
 		return nil, err

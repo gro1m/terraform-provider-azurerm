@@ -1,10 +1,17 @@
-Generated from https://github.com/Azure/azure-rest-api-specs/tree/3c764635e7d442b3e74caf593029fcd440b3ef82
+# Change History
 
-Code generator @microsoft.azure/autorest.go@~2.1.161
+## Additive Changes
 
-## Breaking Changes
+### New Funcs
 
-- Function `NewCachedImagesListResultPage` parameter(s) have been changed from `(func(context.Context, CachedImagesListResult) (CachedImagesListResult, error))` to `(CachedImagesListResult, func(context.Context, CachedImagesListResult) (CachedImagesListResult, error))`
-- Function `NewOperationListResultPage` parameter(s) have been changed from `(func(context.Context, OperationListResult) (OperationListResult, error))` to `(OperationListResult, func(context.Context, OperationListResult) (OperationListResult, error))`
-- Function `NewContainerGroupListResultPage` parameter(s) have been changed from `(func(context.Context, ContainerGroupListResult) (ContainerGroupListResult, error))` to `(ContainerGroupListResult, func(context.Context, ContainerGroupListResult) (ContainerGroupListResult, error))`
-- Function `NewCapabilitiesListResultPage` parameter(s) have been changed from `(func(context.Context, CapabilitiesListResult) (CapabilitiesListResult, error))` to `(CapabilitiesListResult, func(context.Context, CapabilitiesListResult) (CapabilitiesListResult, error))`
+1. Capabilities.MarshalJSON() ([]byte, error)
+1. CapabilitiesCapabilities.MarshalJSON() ([]byte, error)
+1. ContainerGroupIdentityUserAssignedIdentitiesValue.MarshalJSON() ([]byte, error)
+1. ContainerGroupPropertiesInstanceView.MarshalJSON() ([]byte, error)
+1. ContainerPropertiesInstanceView.MarshalJSON() ([]byte, error)
+1. ContainerState.MarshalJSON() ([]byte, error)
+1. Event.MarshalJSON() ([]byte, error)
+1. InitContainerPropertiesDefinitionInstanceView.MarshalJSON() ([]byte, error)
+1. Usage.MarshalJSON() ([]byte, error)
+1. UsageListResult.MarshalJSON() ([]byte, error)
+1. UsageName.MarshalJSON() ([]byte, error)

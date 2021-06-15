@@ -16,7 +16,7 @@ Manages an App Service Environment.
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "exampleRG1"
-  location = "westeurope"
+  location = "West Europe"
 }
 
 resource "azurerm_virtual_network" "example" {
@@ -92,7 +92,13 @@ A `cluster_setting` block supports the following:
 
 * `id` - The ID of the App Service Environment.
 
+* `internal_ip_address` - IP address of internal load balancer of the App Service Environment.
+
 * `location` - The location where the App Service Environment exists.
+
+* `outbound_ip_addresses` - List of outbound IP addresses of the App Service Environment.
+
+* `service_ip_address` - IP address of service endpoint of the App Service Environment.
 
 ## Timeouts
 

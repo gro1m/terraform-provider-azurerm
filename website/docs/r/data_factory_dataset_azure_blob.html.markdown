@@ -15,7 +15,7 @@ Manages an Azure Blob Dataset inside an Azure Data Factory.
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "northeurope"
+  location = "West Europe"
 }
 
 data "azurerm_storage_account" "example" {
@@ -76,6 +76,10 @@ The following supported arguments are specific to Azure Blob Dataset:
 * `path` - (Required) The path of the Azure Blob.
 
 * `filename` - (Required) The filename of the Azure Blob.
+
+* `dynamic_path_enabled` - (Optional) Is the `path` using dynamic expression, function or system variables? Defaults to `false`.
+
+* `dynamic_filename_enabled` - (Optional) Is the `path` using dynamic expression, function or system variables? Defaults to `false`.
 
 ---
 

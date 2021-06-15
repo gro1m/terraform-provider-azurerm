@@ -5,52 +5,50 @@ import (
 	"log"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	azValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/features"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/compute/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/compute/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/base64"
-	azSchema "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/schema"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/suppress"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
-	return &schema.Resource{
+func resourceLinuxVirtualMachineScaleSet() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceLinuxVirtualMachineScaleSetCreate,
 		Read:   resourceLinuxVirtualMachineScaleSetRead,
 		Update: resourceLinuxVirtualMachineScaleSetUpdate,
 		Delete: resourceLinuxVirtualMachineScaleSetDelete,
 
-		Importer: azSchema.ValidateResourceIDPriorToImportThen(func(id string) error {
+		Importer: pluginsdk.ImporterValidatingResourceIdThen(func(id string) error {
 			_, err := parse.VirtualMachineScaleSetID(id)
 			return err
 		}, importVirtualMachineScaleSet(compute.Linux, "azurerm_linux_virtual_machine_scale_set")),
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(time.Minute * 30),
-			Update: schema.DefaultTimeout(time.Minute * 60),
-			Read:   schema.DefaultTimeout(time.Minute * 5),
-			Delete: schema.DefaultTimeout(time.Minute * 30),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(time.Minute * 30),
+			Update: pluginsdk.DefaultTimeout(time.Minute * 60),
+			Read:   pluginsdk.DefaultTimeout(time.Minute * 5),
+			Delete: pluginsdk.DefaultTimeout(time.Minute * 30),
 		},
 
 		// TODO: exposing requireGuestProvisionSignal once it's available
 		// https://github.com/Azure/azure-rest-api-specs/pull/7246
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: ValidateVmName,
+				ValidateFunc: validate.VirtualMachineName,
 			},
 
 			"resource_group_name": azure.SchemaResourceGroupName(),
@@ -59,7 +57,7 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 
 			// Required
 			"admin_username": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
@@ -70,13 +68,13 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"os_disk": VirtualMachineScaleSetOSDiskSchema(),
 
 			"instances": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Required:     true,
 				ValidateFunc: validation.IntAtLeast(0),
 			},
 
 			"sku": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
@@ -85,7 +83,7 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"additional_capabilities": VirtualMachineScaleSetAdditionalCapabilitiesSchema(),
 
 			"admin_password": {
-				Type:             schema.TypeString,
+				Type:             pluginsdk.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				Sensitive:        true,
@@ -101,14 +99,14 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"boot_diagnostics": bootDiagnosticsSchema(),
 
 			"computer_name_prefix": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 
 				// Computed since we reuse the VM name if one's not specified
 				Computed: true,
 				ForceNew: true,
 
-				ValidateFunc: ValidateLinuxComputerNamePrefix,
+				ValidateFunc: validate.LinuxComputerNamePrefix,
 			},
 
 			"custom_data": base64.OptionalSchema(false),
@@ -116,25 +114,25 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"data_disk": VirtualMachineScaleSetDataDiskSchema(),
 
 			"disable_password_authentication": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"do_not_run_extensions_on_overprovisioned_machines": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
 			"encryption_at_host_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 			},
 
 			"eviction_policy": {
 				// only applicable when `priority` is set to `Spot`
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
@@ -146,30 +144,29 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"extension": VirtualMachineScaleSetExtensionsSchema(),
 
 			"extensions_time_budget": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				Default:      "PT1H30M",
 				ValidateFunc: azValidate.ISO8601DurationBetween("PT15M", "PT2H"),
 			},
 
 			"health_probe_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
-				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
 
 			"identity": VirtualMachineScaleSetIdentitySchema(),
 
 			"max_bid_price": {
-				Type:         schema.TypeFloat,
+				Type:         pluginsdk.TypeFloat,
 				Optional:     true,
 				Default:      -1,
 				ValidateFunc: validate.SpotMaxPrice,
 			},
 
 			"overprovision": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
@@ -177,14 +174,14 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"plan": planSchema(),
 
 			"platform_fault_domain_count": {
-				Type:     schema.TypeInt,
+				Type:     pluginsdk.TypeInt,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
 			"priority": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  string(compute.Regular),
@@ -195,14 +192,14 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			},
 
 			"provision_vm_agent": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 				ForceNew: true,
 			},
 
 			"proximity_placement_group_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.ProximityPlacementGroupID,
@@ -215,13 +212,13 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"secret": linuxSecretSchema(),
 
 			"single_placement_group": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
 			"source_image_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.Any(
 					validate.ImageID,
@@ -235,26 +232,26 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 			"tags": tags.Schema(),
 
 			"upgrade_mode": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  string(compute.Manual),
 				ValidateFunc: validation.StringInSlice([]string{
-					string(compute.UpgradeModeAutomatic),
-					string(compute.UpgradeModeManual),
-					string(compute.UpgradeModeRolling),
+					string(compute.Automatic),
+					string(compute.Manual),
+					string(compute.Rolling),
 				}, false),
 			},
 
 			"zone_balance": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Optional: true,
 				ForceNew: true,
 				Default:  false,
 			},
 
 			"scale_in_policy": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				Default:  string(compute.Default),
 				ValidateFunc: validation.StringInSlice([]string{
@@ -270,14 +267,14 @@ func resourceLinuxVirtualMachineScaleSet() *schema.Resource {
 
 			// Computed
 			"unique_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 		},
 	}
 }
 
-func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceLinuxVirtualMachineScaleSetCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.VMScaleSetClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -337,7 +334,7 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 		return err
 	}
 
-	sshKeysRaw := d.Get("admin_ssh_key").(*schema.Set).List()
+	sshKeysRaw := d.Get("admin_ssh_key").(*pluginsdk.Set).List()
 	sshKeys := ExpandSSHKeys(sshKeysRaw)
 
 	healthProbeId := d.Get("health_probe_id").(string)
@@ -347,19 +344,15 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 	rollingUpgradePolicyRaw := d.Get("rolling_upgrade_policy").([]interface{})
 	rollingUpgradePolicy := ExpandVirtualMachineScaleSetRollingUpgradePolicy(rollingUpgradePolicyRaw)
 
-	if upgradeMode != compute.UpgradeModeAutomatic && len(automaticOSUpgradePolicyRaw) > 0 {
+	if upgradeMode != compute.Automatic && len(automaticOSUpgradePolicyRaw) > 0 {
 		return fmt.Errorf("An `automatic_os_upgrade_policy` block cannot be specified when `upgrade_mode` is not set to `Automatic`")
 	}
 
-	if upgradeMode == compute.UpgradeModeAutomatic && len(automaticOSUpgradePolicyRaw) > 0 && healthProbeId == "" {
-		return fmt.Errorf("`healthProbeId` must be set when `upgrade_mode` is set to %q and `automatic_os_upgrade_policy` block exists", string(upgradeMode))
-	}
-
-	shouldHaveRollingUpgradePolicy := upgradeMode == compute.UpgradeModeAutomatic || upgradeMode == compute.UpgradeModeRolling
+	shouldHaveRollingUpgradePolicy := upgradeMode == compute.Automatic || upgradeMode == compute.Rolling
 	if !shouldHaveRollingUpgradePolicy && len(rollingUpgradePolicyRaw) > 0 {
 		return fmt.Errorf("A `rolling_upgrade_policy` block cannot be specified when `upgrade_mode` is set to %q", string(upgradeMode))
 	}
-	shouldHaveRollingUpgradePolicy = upgradeMode == compute.UpgradeModeRolling
+	shouldHaveRollingUpgradePolicy = upgradeMode == compute.Rolling
 	if shouldHaveRollingUpgradePolicy && len(rollingUpgradePolicyRaw) == 0 {
 		return fmt.Errorf("A `rolling_upgrade_policy` block must be specified when `upgrade_mode` is set to %q", string(upgradeMode))
 	}
@@ -374,7 +367,7 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 	if v, ok := d.GetOk("computer_name_prefix"); ok && len(v.(string)) > 0 {
 		computerNamePrefix = v.(string)
 	} else {
-		_, errs := ValidateLinuxComputerNamePrefix(d.Get("name"), "computer_name_prefix")
+		_, errs := validate.LinuxComputerNamePrefix(d.Get("name"), "computer_name_prefix")
 		if len(errs) > 0 {
 			return fmt.Errorf("unable to assume default computer name prefix %s. Please adjust the %q, or specify an explicit %q", errs[0], "name", "computer_name_prefix")
 		}
@@ -421,12 +414,11 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 		},
 	}
 
-	if features.VMSSExtensionsBeta() {
-		if vmExtensionsRaw, ok := d.GetOk("extension"); ok {
-			virtualMachineProfile.ExtensionProfile, err = expandVirtualMachineScaleSetExtensions(vmExtensionsRaw.([]interface{}))
-			if err != nil {
-				return err
-			}
+	hasHealthExtension := false
+	if vmExtensionsRaw, ok := d.GetOk("extension"); ok {
+		virtualMachineProfile.ExtensionProfile, hasHealthExtension, err = expandVirtualMachineScaleSetExtensions(vmExtensionsRaw.(*pluginsdk.Set).List())
+		if err != nil {
+			return err
 		}
 	}
 
@@ -435,6 +427,12 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 			virtualMachineProfile.ExtensionProfile = &compute.VirtualMachineScaleSetExtensionProfile{}
 		}
 		virtualMachineProfile.ExtensionProfile.ExtensionsTimeBudget = utils.String(v.(string))
+	}
+
+	// otherwise the service return the error:
+	// Rolling Upgrade mode is not supported for this Virtual Machine Scale Set because a health probe or health extension was not provided.
+	if upgradeMode == compute.Rolling && (healthProbeId == "" && !hasHealthExtension) {
+		return fmt.Errorf("`health_probe_id` must be set or a health extension must be specified when `upgrade_mode` is set to %q", string(upgradeMode))
 	}
 
 	if adminPassword, ok := d.GetOk("admin_password"); ok {
@@ -554,7 +552,7 @@ func resourceLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta inte
 	return resourceLinuxVirtualMachineScaleSetRead(d, meta)
 }
 
-func resourceLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceLinuxVirtualMachineScaleSetUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.VMScaleSetClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -648,7 +646,7 @@ func resourceLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta inte
 			linuxConfig := compute.LinuxConfiguration{}
 
 			if d.HasChange("admin_ssh_key") {
-				sshKeysRaw := d.Get("admin_ssh_key").(*schema.Set).List()
+				sshKeysRaw := d.Get("admin_ssh_key").(*pluginsdk.Set).List()
 				sshKeys := ExpandSSHKeys(sshKeysRaw)
 				linuxConfig.SSH = &compute.SSHConfiguration{
 					PublicKeys: &sshKeys,
@@ -713,7 +711,17 @@ func resourceLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta inte
 				return err
 			}
 
+			// Must include all storage profile properties when updating disk image.  See: https://github.com/terraform-providers/terraform-provider-azurerm/issues/8273
+			updateProps.VirtualMachineProfile.StorageProfile.DataDisks = existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.DataDisks
 			updateProps.VirtualMachineProfile.StorageProfile.ImageReference = sourceImageReference
+			updateProps.VirtualMachineProfile.StorageProfile.OsDisk = &compute.VirtualMachineScaleSetUpdateOSDisk{
+				Caching:                 existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.Caching,
+				WriteAcceleratorEnabled: existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.WriteAcceleratorEnabled,
+				DiskSizeGB:              existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.DiskSizeGB,
+				Image:                   existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.Image,
+				VhdContainers:           existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.VhdContainers,
+				ManagedDisk:             existing.VirtualMachineScaleSetProperties.VirtualMachineProfile.StorageProfile.OsDisk.ManagedDisk,
+			}
 		}
 	}
 
@@ -804,22 +812,14 @@ func resourceLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta inte
 		update.Sku = sku
 	}
 
-	if features.VMSSExtensionsBeta() {
-		if d.HasChange("extension") {
-			updateInstances = true
+	if d.HasChanges("extension", "extensions_time_budget") {
+		updateInstances = true
 
-			extensionProfile, err := expandVirtualMachineScaleSetExtensions(d.Get("extension").([]interface{}))
-			if err != nil {
-				return err
-			}
-			updateProps.VirtualMachineProfile.ExtensionProfile = extensionProfile
+		extensionProfile, _, err := expandVirtualMachineScaleSetExtensions(d.Get("extension").(*pluginsdk.Set).List())
+		if err != nil {
+			return err
 		}
-	}
-
-	if d.HasChange("extensions_time_budget") {
-		if updateProps.VirtualMachineProfile.ExtensionProfile == nil {
-			updateProps.VirtualMachineProfile.ExtensionProfile = &compute.VirtualMachineScaleSetExtensionProfile{}
-		}
+		updateProps.VirtualMachineProfile.ExtensionProfile = extensionProfile
 		updateProps.VirtualMachineProfile.ExtensionProfile.ExtensionsTimeBudget = utils.String(d.Get("extensions_time_budget").(string))
 	}
 
@@ -846,7 +846,7 @@ func resourceLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta inte
 	return resourceLinuxVirtualMachineScaleSetRead(d, meta)
 }
 
-func resourceLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta interface{}) error {
+func resourceLinuxVirtualMachineScaleSetRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.VMScaleSetClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -942,7 +942,14 @@ func resourceLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta interf
 		d.Set("max_bid_price", maxBidPrice)
 
 		d.Set("eviction_policy", string(profile.EvictionPolicy))
-		d.Set("priority", string(profile.Priority))
+
+		// the service just return empty when this is not assigned when provisioned
+		// See discussion on https://github.com/Azure/azure-rest-api-specs/issues/10971
+		priority := compute.Regular
+		if profile.Priority != "" {
+			priority = profile.Priority
+		}
+		d.Set("priority", priority)
 
 		if storageProfile := profile.StorageProfile; storageProfile != nil {
 			if err := d.Set("os_disk", FlattenVirtualMachineScaleSetOSDisk(storageProfile.OsDisk)); err != nil {
@@ -977,7 +984,7 @@ func resourceLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta interf
 				if err != nil {
 					return fmt.Errorf("Error flattening `admin_ssh_key`: %+v", err)
 				}
-				if err := d.Set("admin_ssh_key", schema.NewSet(SSHKeySchemaHash, *flattenedSshKeys)); err != nil {
+				if err := d.Set("admin_ssh_key", pluginsdk.NewSet(SSHKeySchemaHash, *flattenedSshKeys)); err != nil {
 					return fmt.Errorf("Error setting `admin_ssh_key`: %+v", err)
 				}
 			}
@@ -1006,13 +1013,11 @@ func resourceLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta interf
 			}
 		}
 
-		if features.VMSSExtensionsBeta() {
-			extensionProfile, err := flattenVirtualMachineScaleSetExtensions(profile.ExtensionProfile, d)
-			if err != nil {
-				return fmt.Errorf("failed flattening `extension`: %+v", err)
-			}
-			d.Set("extension", extensionProfile)
+		extensionProfile, err := flattenVirtualMachineScaleSetExtensions(profile.ExtensionProfile, d)
+		if err != nil {
+			return fmt.Errorf("failed flattening `extension`: %+v", err)
 		}
+		d.Set("extension", extensionProfile)
 
 		extensionsTimeBudget := "PT1H30M"
 		if profile.ExtensionProfile != nil && profile.ExtensionProfile.ExtensionsTimeBudget != nil {
@@ -1048,7 +1053,7 @@ func resourceLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta interf
 	return tags.FlattenAndSet(d, resp.Tags)
 }
 
-func resourceLinuxVirtualMachineScaleSetDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceLinuxVirtualMachineScaleSetDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Compute.VMScaleSetClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -1096,7 +1101,11 @@ func resourceLinuxVirtualMachineScaleSetDelete(d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("[DEBUG] Deleting Linux Virtual Machine Scale Set %q (Resource Group %q)..", id.Name, id.ResourceGroup)
-	future, err := client.Delete(ctx, id.ResourceGroup, id.Name)
+	// @ArcturusZhang (mimicking from linux_virtual_machine_pluginsdk.go): sending `nil` here omits this value from being sent
+	// which matches the previous behaviour - we're only splitting this out so it's clear why
+	// TODO: support force deletion once it's out of Preview, if applicable
+	var forceDeletion *bool = nil
+	future, err := client.Delete(ctx, id.ResourceGroup, id.Name, forceDeletion)
 	if err != nil {
 		return fmt.Errorf("Error deleting Linux Virtual Machine Scale Set %q (Resource Group %q): %+v", id.Name, id.ResourceGroup, err)
 	}

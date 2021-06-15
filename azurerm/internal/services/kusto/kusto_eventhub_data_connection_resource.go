@@ -3,46 +3,47 @@ package kusto
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/kusto/mgmt/2020-09-18/kusto"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/validate"
+	eventhubValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/eventhub/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/kusto/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/kusto/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceKustoEventHubDataConnection() *schema.Resource {
-	return &schema.Resource{
+func resourceKustoEventHubDataConnection() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceKustoEventHubDataConnectionCreateUpdate,
 		Read:   resourceKustoEventHubDataConnectionRead,
 		Update: resourceKustoEventHubDataConnectionCreateUpdate,
 		Delete: resourceKustoEventHubDataConnectionDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
+		Importer: pluginsdk.ImporterValidatingResourceIdThen(func(id string) error {
+			_, err := parse.DataConnectionID(id)
+			return err
+		}, importDataConnection(kusto.KindEventHub)),
 
-		Timeouts: &schema.ResourceTimeout{
+		Timeouts: &pluginsdk.ResourceTimeout{
 			// TODO: confirm these
-			Create: schema.DefaultTimeout(60 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(60 * time.Minute),
-			Delete: schema.DefaultTimeout(60 * time.Minute),
+			Create: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(60 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(60 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validateAzureRMKustoDataConnectionName,
+				ValidateFunc: validate.DataConnectionName,
 			},
 
 			"resource_group_name": azure.SchemaResourceGroupName(),
@@ -50,14 +51,14 @@ func resourceKustoEventHubDataConnection() *schema.Resource {
 			"location": azure.SchemaLocation(),
 
 			"cluster_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validateAzureRMKustoClusterName,
+				ValidateFunc: validate.ClusterName,
 			},
 
 			"compression": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  kusto.CompressionNone,
@@ -68,40 +69,50 @@ func resourceKustoEventHubDataConnection() *schema.Resource {
 			},
 
 			"database_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validateAzureRMKustoDatabaseName,
+				ValidateFunc: validate.DatabaseName,
 			},
 
 			"eventhub_id": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: azure.ValidateResourceID,
+				ValidateFunc: eventhubValidate.EventHubID,
+			},
+
+			"event_system_properties": {
+				Type:     pluginsdk.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &pluginsdk.Schema{
+					Type:         pluginsdk.TypeString,
+					ValidateFunc: validation.StringIsNotEmpty,
+				},
 			},
 
 			"consumer_group": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validate.ValidateEventHubConsumerName(),
+				ValidateFunc: eventhubValidate.ValidateEventHubConsumerName(),
 			},
 
 			"table_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
-				ValidateFunc: validateAzureRMKustoEntityName,
+				ValidateFunc: validate.EntityName,
 			},
 
 			"mapping_rule_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Optional:     true,
-				ValidateFunc: validateAzureRMKustoEntityName,
+				ValidateFunc: validate.EntityName,
 			},
 
 			"data_format": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Optional: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					string(kusto.AVRO),
@@ -118,21 +129,10 @@ func resourceKustoEventHubDataConnection() *schema.Resource {
 				}, false),
 			},
 		},
-		CustomizeDiff: func(d *schema.ResourceDiff, _ interface{}) error {
-			_, hasTableName := d.GetOk("table_name")
-			_, hasMappingRuleName := d.GetOk("mapping_rule_name")
-			_, hasDataFormat := d.GetOk("data_format")
-
-			if !(utils.AllEquals(hasTableName, hasMappingRuleName, hasDataFormat)) {
-				return fmt.Errorf("if one of the target table properties `table_name`, `mapping_rule_name` or `data_format` are set, the other values must also be defined")
-			}
-
-			return nil
-		},
 	}
 }
 
-func resourceKustoEventHubDataConnectionCreateUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceKustoEventHubDataConnectionCreateUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Kusto.DataConnectionsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -195,7 +195,7 @@ func resourceKustoEventHubDataConnectionCreateUpdate(d *schema.ResourceData, met
 	return resourceKustoEventHubDataConnectionRead(d, meta)
 }
 
-func resourceKustoEventHubDataConnectionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceKustoEventHubDataConnectionRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Kusto.DataConnectionsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -231,13 +231,14 @@ func resourceKustoEventHubDataConnectionRead(d *schema.ResourceData, meta interf
 			d.Set("mapping_rule_name", props.MappingRuleName)
 			d.Set("data_format", props.DataFormat)
 			d.Set("compression", props.Compression)
+			d.Set("event_system_properties", props.EventSystemProperties)
 		}
 	}
 
 	return nil
 }
 
-func resourceKustoEventHubDataConnectionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceKustoEventHubDataConnectionDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Kusto.DataConnectionsClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -259,43 +260,7 @@ func resourceKustoEventHubDataConnectionDelete(d *schema.ResourceData, meta inte
 	return nil
 }
 
-func validateAzureRMKustoDataConnectionName(v interface{}, k string) (warnings []string, errors []error) {
-	name := v.(string)
-
-	if regexp.MustCompile(`^[\s]+$`).MatchString(name) {
-		errors = append(errors, fmt.Errorf("%q must not consist of whitespaces only", k))
-	}
-
-	if !regexp.MustCompile(`^[a-zA-Z0-9\s.-]+$`).MatchString(name) {
-		errors = append(errors, fmt.Errorf("%q may only contain letters, digits, whitespaces, dashes and dots: %q", k, name))
-	}
-
-	if len(name) > 40 {
-		errors = append(errors, fmt.Errorf("%q must be (inclusive) between 1 and 40 characters long but is %d", k, len(name)))
-	}
-
-	return warnings, errors
-}
-
-func validateAzureRMKustoEntityName(v interface{}, k string) (warnings []string, errors []error) {
-	name := v.(string)
-
-	if regexp.MustCompile(`^[\s]+$`).MatchString(name) {
-		errors = append(errors, fmt.Errorf("%q must not consist of whitespaces only", k))
-	}
-
-	if !regexp.MustCompile(`^[a-zA-Z0-9_\s.-]+$`).MatchString(name) {
-		errors = append(errors, fmt.Errorf("%q may only contain letters, digits, underscores, spaces, dashes and dots: %q", k, name))
-	}
-
-	if len(name) > 1024 {
-		errors = append(errors, fmt.Errorf("%q must be (inclusive) between 1 and 1024 characters long but is %d", k, len(name)))
-	}
-
-	return warnings, errors
-}
-
-func expandKustoEventHubDataConnectionProperties(d *schema.ResourceData) *kusto.EventHubConnectionProperties {
+func expandKustoEventHubDataConnectionProperties(d *pluginsdk.ResourceData) *kusto.EventHubConnectionProperties {
 	eventHubConnectionProperties := &kusto.EventHubConnectionProperties{}
 
 	if eventhubResourceID, ok := d.GetOk("eventhub_id"); ok {
@@ -320,6 +285,14 @@ func expandKustoEventHubDataConnectionProperties(d *schema.ResourceData) *kusto.
 
 	if compression, ok := d.GetOk("compression"); ok {
 		eventHubConnectionProperties.Compression = kusto.Compression(compression.(string))
+	}
+
+	if eventSystemProperties, ok := d.GetOk("event_system_properties"); ok {
+		props := make([]string, 0)
+		for _, prop := range eventSystemProperties.([]interface{}) {
+			props = append(props, prop.(string))
+		}
+		eventHubConnectionProperties.EventSystemProperties = &props
 	}
 
 	return eventHubConnectionProperties

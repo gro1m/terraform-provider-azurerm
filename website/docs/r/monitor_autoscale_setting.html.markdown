@@ -15,7 +15,7 @@ Manages a AutoScale Setting which can be applied to Virtual Machine Scale Sets, 
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "autoscalingTest"
-  location = "West US"
+  location = "West Europe"
 }
 
 resource "azurerm_virtual_machine_scale_set" "example" {
@@ -99,7 +99,7 @@ resource "azurerm_monitor_autoscale_setting" "example" {
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "autoscalingTest"
-  location = "West US"
+  location = "West Europe"
 }
 
 resource "azurerm_virtual_machine_scale_set" "example" {
@@ -185,7 +185,7 @@ resource "azurerm_monitor_autoscale_setting" "example" {
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "autoscalingTest"
-  location = "West US"
+  location = "West Europe"
 }
 
 resource "azurerm_virtual_machine_scale_set" "example" {
@@ -293,7 +293,7 @@ A `profile` block supports the following:
 
 * `capacity` - (Required) A `capacity` block as defined below.
 
-* `rule` - (Required) One or more (up to 10) `rule` blocks as defined below.
+* `rule` - (Optional) One or more (up to 10) `rule` blocks as defined below.
 
 * `fixed_date` - (Optional) A `fixed_date` block as defined below. This cannot be specified if a `recurrence` block is specified.
 

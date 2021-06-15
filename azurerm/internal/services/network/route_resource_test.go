@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/network/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -21,10 +20,10 @@ func TestAccRoute_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_route", "test")
 	r := RouteResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -36,10 +35,10 @@ func TestAccRoute_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_route", "test")
 	r := RouteResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -54,10 +53,10 @@ func TestAccRoute_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_route", "test")
 	r := RouteResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("next_hop_type").HasValue("VnetLocal"),
 				check.That(data.ResourceName).Key("next_hop_in_ip_address").HasValue(""),
@@ -65,7 +64,7 @@ func TestAccRoute_update(t *testing.T) {
 		},
 		{
 			Config: r.basicAppliance(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("next_hop_type").HasValue("VirtualAppliance"),
 				check.That(data.ResourceName).Key("next_hop_in_ip_address").HasValue("192.168.0.1"),
@@ -73,7 +72,7 @@ func TestAccRoute_update(t *testing.T) {
 		},
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("next_hop_type").HasValue("VnetLocal"),
 				check.That(data.ResourceName).Key("next_hop_in_ip_address").HasValue(""),
@@ -86,7 +85,7 @@ func TestAccRoute_disappears(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_route", "test")
 	r := RouteResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		data.DisappearsStep(acceptance.DisappearsStepData{
 			Config:       r.basic,
 			TestResource: r,
@@ -98,50 +97,44 @@ func TestAccRoute_multipleRoutes(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_route", "test")
 	r := RouteResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 
 		{
 			Config: r.multipleRoutes(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 	})
 }
 
-func (t RouteResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
-	id, err := azure.ParseAzureResourceID(state.ID)
+func (t RouteResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := parse.RouteID(state.ID)
 	if err != nil {
 		return nil, err
 	}
-	resGroup := id.ResourceGroup
-	rtName := id.Path["routeTables"]
-	routeName := id.Path["routes"]
 
-	resp, err := clients.Network.RoutesClient.Get(ctx, resGroup, rtName, routeName)
+	resp, err := clients.Network.RoutesClient.Get(ctx, id.ResourceGroup, id.RouteTableName, id.Name)
 	if err != nil {
-		return nil, fmt.Errorf("reading Route (%s): %+v", id, err)
+		return nil, fmt.Errorf("reading Route (%s): %+v", *id, err)
 	}
 
 	return utils.Bool(resp.ID != nil), nil
 }
 
-func (r RouteResource) Destroy(ctx context.Context, client *clients.Client, state *terraform.InstanceState) (*bool, error) {
-	id, err := azure.ParseAzureResourceID(state.ID)
+func (r RouteResource) Destroy(ctx context.Context, client *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := parse.RouteID(state.ID)
 	if err != nil {
 		return nil, err
 	}
-	resGroup := id.ResourceGroup
-	rtName := id.Path["routeTables"]
-	routeName := id.Path["routes"]
 
-	future, err := client.Network.RoutesClient.Delete(ctx, resGroup, rtName, routeName)
+	future, err := client.Network.RoutesClient.Delete(ctx, id.ResourceGroup, id.RouteTableName, id.Name)
 	if err != nil {
 		return nil, fmt.Errorf("deleting on routesClient: %+v", err)
 	}

@@ -5,9 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/preview/cosmos-db/mgmt/2020-04-01-preview/documentdb"
+	"github.com/Azure/azure-sdk-for-go/services/cosmos-db/mgmt/2021-01-15/documentdb"
 	"github.com/hashicorp/go-azure-helpers/response"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
@@ -15,40 +14,36 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/cosmos/migration"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/cosmos/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/cosmos/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func resourceCosmosDbMongoDatabase() *schema.Resource {
-	return &schema.Resource{
+func resourceCosmosDbMongoDatabase() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Create: resourceCosmosDbMongoDatabaseCreate,
 		Update: resourceCosmosDbMongoDatabaseUpdate,
 		Read:   resourceCosmosDbMongoDatabaseRead,
 		Delete: resourceCosmosDbMongoDatabaseDelete,
 
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
+		// TODO: replace this with an importer which validates the ID during import
+		Importer: pluginsdk.DefaultImporter(),
 
 		SchemaVersion: 1,
-		StateUpgraders: []schema.StateUpgrader{
-			{
-				Type:    migration.ResourceMongoDbDatabaseUpgradeV0Schema().CoreConfigSchema().ImpliedType(),
-				Upgrade: migration.ResourceMongoDbDatabaseStateUpgradeV0ToV1,
-				Version: 0,
-			},
+		StateUpgraders: pluginsdk.StateUpgrades(map[int]pluginsdk.StateUpgrade{
+			0: migration.MongoDatabaseV0ToV1{},
+		}),
+
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Create: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Read:   pluginsdk.DefaultTimeout(5 * time.Minute),
+			Update: pluginsdk.DefaultTimeout(30 * time.Minute),
+			Delete: pluginsdk.DefaultTimeout(30 * time.Minute),
 		},
 
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Minute),
-			Read:   schema.DefaultTimeout(5 * time.Minute),
-			Update: schema.DefaultTimeout(30 * time.Minute),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
-		},
-
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.CosmosEntityName,
@@ -57,14 +52,14 @@ func resourceCosmosDbMongoDatabase() *schema.Resource {
 			"resource_group_name": azure.SchemaResourceGroupName(),
 
 			"account_name": {
-				Type:         schema.TypeString,
+				Type:         pluginsdk.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.CosmosAccountName,
 			},
 
 			"throughput": {
-				Type:         schema.TypeInt,
+				Type:         pluginsdk.TypeInt,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validate.CosmosThroughput,
@@ -75,7 +70,7 @@ func resourceCosmosDbMongoDatabase() *schema.Resource {
 	}
 }
 
-func resourceCosmosDbMongoDatabaseCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCosmosDbMongoDatabaseCreate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cosmos.MongoDbClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -139,7 +134,7 @@ func resourceCosmosDbMongoDatabaseCreate(d *schema.ResourceData, meta interface{
 	return resourceCosmosDbMongoDatabaseRead(d, meta)
 }
 
-func resourceCosmosDbMongoDatabaseUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceCosmosDbMongoDatabaseUpdate(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cosmos.MongoDbClient
 	ctx, cancel := timeouts.ForCreate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -187,15 +182,14 @@ func resourceCosmosDbMongoDatabaseUpdate(d *schema.ResourceData, meta interface{
 		}
 	}
 
-	_, err = client.GetMongoDBDatabase(ctx, id.ResourceGroup, id.DatabaseAccountName, id.Name)
-	if err != nil {
+	if _, err = client.GetMongoDBDatabase(ctx, id.ResourceGroup, id.DatabaseAccountName, id.Name); err != nil {
 		return fmt.Errorf("Error making get request for Cosmos Mongo Database %q (Account: %q): %+v", id.Name, id.DatabaseAccountName, err)
 	}
 
 	return resourceCosmosDbMongoDatabaseRead(d, meta)
 }
 
-func resourceCosmosDbMongoDatabaseRead(d *schema.ResourceData, meta interface{}) error {
+func resourceCosmosDbMongoDatabaseRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cosmos.MongoDbClient
 	accountClient := meta.(*clients.Client).Cosmos.DatabaseClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
@@ -234,34 +228,25 @@ func resourceCosmosDbMongoDatabaseRead(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf("cosmosDB Account %q (Resource Group %q) ID is empty or nil", id.DatabaseAccountName, id.ResourceGroup)
 	}
 
-	// if the cosmos Account is serverless, it could not call the get throughput api
-	if props := accResp.DatabaseAccountGetProperties; props != nil && props.Capabilities != nil {
-		serverless := false
-		for _, v := range *props.Capabilities {
-			if *v.Name == "EnableServerless" {
-				serverless = true
-			}
-		}
-
-		if !serverless {
-			throughputResp, err := client.GetMongoDBDatabaseThroughput(ctx, id.ResourceGroup, id.DatabaseAccountName, id.Name)
-			if err != nil {
-				if !utils.ResponseWasNotFound(throughputResp.Response) {
-					return fmt.Errorf("Error reading Throughput on Cosmos Mongo Database %q (Account: %q): %+v", id.Name, id.DatabaseAccountName, err)
-				} else {
-					d.Set("throughput", nil)
-					d.Set("autoscale_settings", nil)
-				}
+	// if the cosmos account is serverless calling the get throughput api would yield an error
+	if !isServerlessCapacityMode(accResp) {
+		throughputResp, err := client.GetMongoDBDatabaseThroughput(ctx, id.ResourceGroup, id.DatabaseAccountName, id.Name)
+		if err != nil {
+			if !utils.ResponseWasNotFound(throughputResp.Response) {
+				return fmt.Errorf("Error reading Throughput on Cosmos Mongo Database %q (Account: %q): %+v", id.Name, id.DatabaseAccountName, err)
 			} else {
-				common.SetResourceDataThroughputFromResponse(throughputResp, d)
+				d.Set("throughput", nil)
+				d.Set("autoscale_settings", nil)
 			}
+		} else {
+			common.SetResourceDataThroughputFromResponse(throughputResp, d)
 		}
 	}
 
 	return nil
 }
 
-func resourceCosmosDbMongoDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCosmosDbMongoDatabaseDelete(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Cosmos.MongoDbClient
 	ctx, cancel := timeouts.ForDelete(meta.(*clients.Client).StopContext, d)
 	defer cancel()

@@ -1,42 +1,90 @@
-Generated from https://github.com/Azure/azure-rest-api-specs/tree/3c764635e7d442b3e74caf593029fcd440b3ef82
+# Change History
 
-Code generator @microsoft.azure/autorest.go@~2.1.161
+## Additive Changes
 
-## Breaking Changes
+### New Funcs
 
-- Function `NewExtendedDatabaseBlobAuditingPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, ExtendedDatabaseBlobAuditingPolicyListResult) (ExtendedDatabaseBlobAuditingPolicyListResult, error))` to `(ExtendedDatabaseBlobAuditingPolicyListResult, func(context.Context, ExtendedDatabaseBlobAuditingPolicyListResult) (ExtendedDatabaseBlobAuditingPolicyListResult, error))`
-- Function `NewJobAgentListResultPage` parameter(s) have been changed from `(func(context.Context, JobAgentListResult) (JobAgentListResult, error))` to `(JobAgentListResult, func(context.Context, JobAgentListResult) (JobAgentListResult, error))`
-- Function `NewServerDNSAliasListResultPage` parameter(s) have been changed from `(func(context.Context, ServerDNSAliasListResult) (ServerDNSAliasListResult, error))` to `(ServerDNSAliasListResult, func(context.Context, ServerDNSAliasListResult) (ServerDNSAliasListResult, error))`
-- Function `NewExtendedServerBlobAuditingPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, ExtendedServerBlobAuditingPolicyListResult) (ExtendedServerBlobAuditingPolicyListResult, error))` to `(ExtendedServerBlobAuditingPolicyListResult, func(context.Context, ExtendedServerBlobAuditingPolicyListResult) (ExtendedServerBlobAuditingPolicyListResult, error))`
-- Function `NewServerKeyListResultPage` parameter(s) have been changed from `(func(context.Context, ServerKeyListResult) (ServerKeyListResult, error))` to `(ServerKeyListResult, func(context.Context, ServerKeyListResult) (ServerKeyListResult, error))`
-- Function `NewServerListResultPage` parameter(s) have been changed from `(func(context.Context, ServerListResult) (ServerListResult, error))` to `(ServerListResult, func(context.Context, ServerListResult) (ServerListResult, error))`
-- Function `NewServerBlobAuditingPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, ServerBlobAuditingPolicyListResult) (ServerBlobAuditingPolicyListResult, error))` to `(ServerBlobAuditingPolicyListResult, func(context.Context, ServerBlobAuditingPolicyListResult) (ServerBlobAuditingPolicyListResult, error))`
-- Function `NewDatabaseBlobAuditingPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, DatabaseBlobAuditingPolicyListResult) (DatabaseBlobAuditingPolicyListResult, error))` to `(DatabaseBlobAuditingPolicyListResult, func(context.Context, DatabaseBlobAuditingPolicyListResult) (DatabaseBlobAuditingPolicyListResult, error))`
-- Function `NewVirtualClusterListResultPage` parameter(s) have been changed from `(func(context.Context, VirtualClusterListResult) (VirtualClusterListResult, error))` to `(VirtualClusterListResult, func(context.Context, VirtualClusterListResult) (VirtualClusterListResult, error))`
-- Function `NewJobCredentialListResultPage` parameter(s) have been changed from `(func(context.Context, JobCredentialListResult) (JobCredentialListResult, error))` to `(JobCredentialListResult, func(context.Context, JobCredentialListResult) (JobCredentialListResult, error))`
-- Function `NewJobExecutionListResultPage` parameter(s) have been changed from `(func(context.Context, JobExecutionListResult) (JobExecutionListResult, error))` to `(JobExecutionListResult, func(context.Context, JobExecutionListResult) (JobExecutionListResult, error))`
-- Function `NewSyncDatabaseIDListResultPage` parameter(s) have been changed from `(func(context.Context, SyncDatabaseIDListResult) (SyncDatabaseIDListResult, error))` to `(SyncDatabaseIDListResult, func(context.Context, SyncDatabaseIDListResult) (SyncDatabaseIDListResult, error))`
-- Function `NewEncryptionProtectorListResultPage` parameter(s) have been changed from `(func(context.Context, EncryptionProtectorListResult) (EncryptionProtectorListResult, error))` to `(EncryptionProtectorListResult, func(context.Context, EncryptionProtectorListResult) (EncryptionProtectorListResult, error))`
-- Function `NewJobListResultPage` parameter(s) have been changed from `(func(context.Context, JobListResult) (JobListResult, error))` to `(JobListResult, func(context.Context, JobListResult) (JobListResult, error))`
-- Function `NewDatabaseVulnerabilityAssessmentListResultPage` parameter(s) have been changed from `(func(context.Context, DatabaseVulnerabilityAssessmentListResult) (DatabaseVulnerabilityAssessmentListResult, error))` to `(DatabaseVulnerabilityAssessmentListResult, func(context.Context, DatabaseVulnerabilityAssessmentListResult) (DatabaseVulnerabilityAssessmentListResult, error))`
-- Function `NewRestorableDroppedManagedDatabaseListResultPage` parameter(s) have been changed from `(func(context.Context, RestorableDroppedManagedDatabaseListResult) (RestorableDroppedManagedDatabaseListResult, error))` to `(RestorableDroppedManagedDatabaseListResult, func(context.Context, RestorableDroppedManagedDatabaseListResult) (RestorableDroppedManagedDatabaseListResult, error))`
-- Function `NewVirtualNetworkRuleListResultPage` parameter(s) have been changed from `(func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))` to `(VirtualNetworkRuleListResult, func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))`
-- Function `NewSyncMemberListResultPage` parameter(s) have been changed from `(func(context.Context, SyncMemberListResult) (SyncMemberListResult, error))` to `(SyncMemberListResult, func(context.Context, SyncMemberListResult) (SyncMemberListResult, error))`
-- Function `NewManagedDatabaseListResultPage` parameter(s) have been changed from `(func(context.Context, ManagedDatabaseListResult) (ManagedDatabaseListResult, error))` to `(ManagedDatabaseListResult, func(context.Context, ManagedDatabaseListResult) (ManagedDatabaseListResult, error))`
-- Function `NewManagedInstanceAdministratorListResultPage` parameter(s) have been changed from `(func(context.Context, ManagedInstanceAdministratorListResult) (ManagedInstanceAdministratorListResult, error))` to `(ManagedInstanceAdministratorListResult, func(context.Context, ManagedInstanceAdministratorListResult) (ManagedInstanceAdministratorListResult, error))`
-- Function `NewManagedInstanceListResultPage` parameter(s) have been changed from `(func(context.Context, ManagedInstanceListResult) (ManagedInstanceListResult, error))` to `(ManagedInstanceListResult, func(context.Context, ManagedInstanceListResult) (ManagedInstanceListResult, error))`
-- Function `NewOperationListResultPage` parameter(s) have been changed from `(func(context.Context, OperationListResult) (OperationListResult, error))` to `(OperationListResult, func(context.Context, OperationListResult) (OperationListResult, error))`
-- Function `NewFailoverGroupListResultPage` parameter(s) have been changed from `(func(context.Context, FailoverGroupListResult) (FailoverGroupListResult, error))` to `(FailoverGroupListResult, func(context.Context, FailoverGroupListResult) (FailoverGroupListResult, error))`
-- Function `NewLogicalServerSecurityAlertPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, LogicalServerSecurityAlertPolicyListResult) (LogicalServerSecurityAlertPolicyListResult, error))` to `(LogicalServerSecurityAlertPolicyListResult, func(context.Context, LogicalServerSecurityAlertPolicyListResult) (LogicalServerSecurityAlertPolicyListResult, error))`
-- Function `NewSyncAgentLinkedDatabaseListResultPage` parameter(s) have been changed from `(func(context.Context, SyncAgentLinkedDatabaseListResult) (SyncAgentLinkedDatabaseListResult, error))` to `(SyncAgentLinkedDatabaseListResult, func(context.Context, SyncAgentLinkedDatabaseListResult) (SyncAgentLinkedDatabaseListResult, error))`
-- Function `NewSubscriptionUsageListResultPage` parameter(s) have been changed from `(func(context.Context, SubscriptionUsageListResult) (SubscriptionUsageListResult, error))` to `(SubscriptionUsageListResult, func(context.Context, SubscriptionUsageListResult) (SubscriptionUsageListResult, error))`
-- Function `NewSyncFullSchemaPropertiesListResultPage` parameter(s) have been changed from `(func(context.Context, SyncFullSchemaPropertiesListResult) (SyncFullSchemaPropertiesListResult, error))` to `(SyncFullSchemaPropertiesListResult, func(context.Context, SyncFullSchemaPropertiesListResult) (SyncFullSchemaPropertiesListResult, error))`
-- Function `NewSyncGroupListResultPage` parameter(s) have been changed from `(func(context.Context, SyncGroupListResult) (SyncGroupListResult, error))` to `(SyncGroupListResult, func(context.Context, SyncGroupListResult) (SyncGroupListResult, error))`
-- Function `NewJobTargetGroupListResultPage` parameter(s) have been changed from `(func(context.Context, JobTargetGroupListResult) (JobTargetGroupListResult, error))` to `(JobTargetGroupListResult, func(context.Context, JobTargetGroupListResult) (JobTargetGroupListResult, error))`
-- Function `NewManagedBackupShortTermRetentionPolicyListResultPage` parameter(s) have been changed from `(func(context.Context, ManagedBackupShortTermRetentionPolicyListResult) (ManagedBackupShortTermRetentionPolicyListResult, error))` to `(ManagedBackupShortTermRetentionPolicyListResult, func(context.Context, ManagedBackupShortTermRetentionPolicyListResult) (ManagedBackupShortTermRetentionPolicyListResult, error))`
-- Function `NewSensitivityLabelListResultPage` parameter(s) have been changed from `(func(context.Context, SensitivityLabelListResult) (SensitivityLabelListResult, error))` to `(SensitivityLabelListResult, func(context.Context, SensitivityLabelListResult) (SensitivityLabelListResult, error))`
-- Function `NewSyncGroupLogListResultPage` parameter(s) have been changed from `(func(context.Context, SyncGroupLogListResult) (SyncGroupLogListResult, error))` to `(SyncGroupLogListResult, func(context.Context, SyncGroupLogListResult) (SyncGroupLogListResult, error))`
-- Function `NewDatabaseOperationListResultPage` parameter(s) have been changed from `(func(context.Context, DatabaseOperationListResult) (DatabaseOperationListResult, error))` to `(DatabaseOperationListResult, func(context.Context, DatabaseOperationListResult) (DatabaseOperationListResult, error))`
-- Function `NewJobStepListResultPage` parameter(s) have been changed from `(func(context.Context, JobStepListResult) (JobStepListResult, error))` to `(JobStepListResult, func(context.Context, JobStepListResult) (JobStepListResult, error))`
-- Function `NewJobVersionListResultPage` parameter(s) have been changed from `(func(context.Context, JobVersionListResult) (JobVersionListResult, error))` to `(JobVersionListResult, func(context.Context, JobVersionListResult) (JobVersionListResult, error))`
-- Function `NewSyncAgentListResultPage` parameter(s) have been changed from `(func(context.Context, SyncAgentListResult) (SyncAgentListResult, error))` to `(SyncAgentListResult, func(context.Context, SyncAgentListResult) (SyncAgentListResult, error))`
+1. CheckNameAvailabilityResponse.MarshalJSON() ([]byte, error)
+1. DataWarehouseUserActivitiesProperties.MarshalJSON() ([]byte, error)
+1. DatabaseBlobAuditingPolicyListResult.MarshalJSON() ([]byte, error)
+1. DatabaseOperationListResult.MarshalJSON() ([]byte, error)
+1. DatabaseOperationProperties.MarshalJSON() ([]byte, error)
+1. DatabaseUsage.MarshalJSON() ([]byte, error)
+1. DatabaseVulnerabilityAssessmentListResult.MarshalJSON() ([]byte, error)
+1. EditionCapability.MarshalJSON() ([]byte, error)
+1. ElasticPoolActivityProperties.MarshalJSON() ([]byte, error)
+1. ElasticPoolDatabaseActivityProperties.MarshalJSON() ([]byte, error)
+1. ElasticPoolDtuCapability.MarshalJSON() ([]byte, error)
+1. ElasticPoolEditionCapability.MarshalJSON() ([]byte, error)
+1. ElasticPoolPerDatabaseMaxDtuCapability.MarshalJSON() ([]byte, error)
+1. ElasticPoolPerDatabaseMinDtuCapability.MarshalJSON() ([]byte, error)
+1. EncryptionProtectorListResult.MarshalJSON() ([]byte, error)
+1. ExtendedDatabaseBlobAuditingPolicyListResult.MarshalJSON() ([]byte, error)
+1. ExtendedServerBlobAuditingPolicyListResult.MarshalJSON() ([]byte, error)
+1. FailoverGroupListResult.MarshalJSON() ([]byte, error)
+1. ImportExportResponseProperties.MarshalJSON() ([]byte, error)
+1. JobAgentListResult.MarshalJSON() ([]byte, error)
+1. JobCredentialListResult.MarshalJSON() ([]byte, error)
+1. JobExecutionListResult.MarshalJSON() ([]byte, error)
+1. JobExecutionTarget.MarshalJSON() ([]byte, error)
+1. JobListResult.MarshalJSON() ([]byte, error)
+1. JobStepListResult.MarshalJSON() ([]byte, error)
+1. JobTargetGroupListResult.MarshalJSON() ([]byte, error)
+1. JobVersion.MarshalJSON() ([]byte, error)
+1. JobVersionListResult.MarshalJSON() ([]byte, error)
+1. LocationCapabilities.MarshalJSON() ([]byte, error)
+1. LogicalServerSecurityAlertPolicyListResult.MarshalJSON() ([]byte, error)
+1. ManagedBackupShortTermRetentionPolicyListResult.MarshalJSON() ([]byte, error)
+1. ManagedDatabaseListResult.MarshalJSON() ([]byte, error)
+1. ManagedInstanceAdministratorListResult.MarshalJSON() ([]byte, error)
+1. ManagedInstanceListResult.MarshalJSON() ([]byte, error)
+1. MaxSizeCapability.MarshalJSON() ([]byte, error)
+1. Metric.MarshalJSON() ([]byte, error)
+1. MetricAvailability.MarshalJSON() ([]byte, error)
+1. MetricDefinition.MarshalJSON() ([]byte, error)
+1. MetricName.MarshalJSON() ([]byte, error)
+1. MetricValue.MarshalJSON() ([]byte, error)
+1. OperationDisplay.MarshalJSON() ([]byte, error)
+1. OperationImpact.MarshalJSON() ([]byte, error)
+1. OperationListResult.MarshalJSON() ([]byte, error)
+1. PerformanceLevel.MarshalJSON() ([]byte, error)
+1. ProxyResource.MarshalJSON() ([]byte, error)
+1. RecommendedIndexProperties.MarshalJSON() ([]byte, error)
+1. RecoverableDatabaseProperties.MarshalJSON() ([]byte, error)
+1. ReplicationLinkProperties.MarshalJSON() ([]byte, error)
+1. Resource.MarshalJSON() ([]byte, error)
+1. RestorableDroppedDatabaseProperties.MarshalJSON() ([]byte, error)
+1. RestorableDroppedManagedDatabaseListResult.MarshalJSON() ([]byte, error)
+1. RestorableDroppedManagedDatabaseProperties.MarshalJSON() ([]byte, error)
+1. RestorePointListResult.MarshalJSON() ([]byte, error)
+1. RestorePointProperties.MarshalJSON() ([]byte, error)
+1. SensitivityLabelListResult.MarshalJSON() ([]byte, error)
+1. ServerBlobAuditingPolicyListResult.MarshalJSON() ([]byte, error)
+1. ServerDNSAliasListResult.MarshalJSON() ([]byte, error)
+1. ServerDNSAliasProperties.MarshalJSON() ([]byte, error)
+1. ServerKeyListResult.MarshalJSON() ([]byte, error)
+1. ServerListResult.MarshalJSON() ([]byte, error)
+1. ServerUsage.MarshalJSON() ([]byte, error)
+1. ServerVersionCapability.MarshalJSON() ([]byte, error)
+1. ServiceObjectiveProperties.MarshalJSON() ([]byte, error)
+1. ServiceTierAdvisorProperties.MarshalJSON() ([]byte, error)
+1. SloUsageMetric.MarshalJSON() ([]byte, error)
+1. SubscriptionUsageListResult.MarshalJSON() ([]byte, error)
+1. SubscriptionUsageProperties.MarshalJSON() ([]byte, error)
+1. SyncAgentKeyProperties.MarshalJSON() ([]byte, error)
+1. SyncAgentLinkedDatabaseListResult.MarshalJSON() ([]byte, error)
+1. SyncAgentLinkedDatabaseProperties.MarshalJSON() ([]byte, error)
+1. SyncAgentListResult.MarshalJSON() ([]byte, error)
+1. SyncDatabaseIDListResult.MarshalJSON() ([]byte, error)
+1. SyncDatabaseIDProperties.MarshalJSON() ([]byte, error)
+1. SyncFullSchemaProperties.MarshalJSON() ([]byte, error)
+1. SyncFullSchemaPropertiesListResult.MarshalJSON() ([]byte, error)
+1. SyncFullSchemaTable.MarshalJSON() ([]byte, error)
+1. SyncFullSchemaTableColumn.MarshalJSON() ([]byte, error)
+1. SyncGroupListResult.MarshalJSON() ([]byte, error)
+1. SyncGroupLogListResult.MarshalJSON() ([]byte, error)
+1. SyncGroupLogProperties.MarshalJSON() ([]byte, error)
+1. SyncMemberListResult.MarshalJSON() ([]byte, error)
+1. TransparentDataEncryptionActivityProperties.MarshalJSON() ([]byte, error)
+1. VirtualClusterListResult.MarshalJSON() ([]byte, error)
+1. VirtualNetworkRuleListResult.MarshalJSON() ([]byte, error)

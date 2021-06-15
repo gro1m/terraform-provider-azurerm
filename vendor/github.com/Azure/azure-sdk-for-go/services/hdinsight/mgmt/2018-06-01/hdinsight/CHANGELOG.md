@@ -1,16 +1,32 @@
-Generated from https://github.com/Azure/azure-rest-api-specs/tree/b08824e05817297a4b2874d8db5e6fc8c29349c9
+# Change History
 
-Code generator @microsoft.azure/autorest.go@~2.1.165
+## Additive Changes
 
-## Struct Changes
+### New Funcs
 
-### New Structs
+1. *ExtensionsDisableAzureMonitorFuture.UnmarshalJSON([]byte) error
+1. *ExtensionsEnableAzureMonitorFuture.UnmarshalJSON([]byte) error
+1. AzureMonitorSelectedConfigurations.MarshalJSON() ([]byte, error)
+1. ExtensionsClient.DisableAzureMonitor(context.Context, string, string) (ExtensionsDisableAzureMonitorFuture, error)
+1. ExtensionsClient.DisableAzureMonitorPreparer(context.Context, string, string) (*http.Request, error)
+1. ExtensionsClient.DisableAzureMonitorResponder(*http.Response) (autorest.Response, error)
+1. ExtensionsClient.DisableAzureMonitorSender(*http.Request) (ExtensionsDisableAzureMonitorFuture, error)
+1. ExtensionsClient.EnableAzureMonitor(context.Context, string, string, AzureMonitorRequest) (ExtensionsEnableAzureMonitorFuture, error)
+1. ExtensionsClient.EnableAzureMonitorPreparer(context.Context, string, string, AzureMonitorRequest) (*http.Request, error)
+1. ExtensionsClient.EnableAzureMonitorResponder(*http.Response) (autorest.Response, error)
+1. ExtensionsClient.EnableAzureMonitorSender(*http.Request) (ExtensionsEnableAzureMonitorFuture, error)
+1. ExtensionsClient.GetAzureMonitorStatus(context.Context, string, string) (AzureMonitorResponse, error)
+1. ExtensionsClient.GetAzureMonitorStatusPreparer(context.Context, string, string) (*http.Request, error)
+1. ExtensionsClient.GetAzureMonitorStatusResponder(*http.Response) (AzureMonitorResponse, error)
+1. ExtensionsClient.GetAzureMonitorStatusSender(*http.Request) (*http.Response, error)
 
-1. ComputeIsolationProperties
+### Struct Changes
 
-### New Struct Fields
+#### New Structs
 
-1. ClusterCreateProperties.ComputeIsolationProperties
-1. ClusterGetProperties.ComputeIsolationProperties
-1. HostInfo.EffectiveDiskEncryptionKeyURL
-1. HostInfo.Fqdn
+1. AzureMonitorRequest
+1. AzureMonitorResponse
+1. AzureMonitorSelectedConfigurations
+1. AzureMonitorTableConfiguration
+1. ExtensionsDisableAzureMonitorFuture
+1. ExtensionsEnableAzureMonitorFuture

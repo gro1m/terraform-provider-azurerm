@@ -5,28 +5,28 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2020-12-01/containerservice"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2021-03-01/containerservice"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/containers/kubernetes"
 	msiparse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/msi/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-func dataSourceKubernetesCluster() *schema.Resource {
-	return &schema.Resource{
+func dataSourceKubernetesCluster() *pluginsdk.Resource {
+	return &pluginsdk.Resource{
 		Read: dataSourceKubernetesClusterRead,
 
-		Timeouts: &schema.ResourceTimeout{
-			Read: schema.DefaultTimeout(5 * time.Minute),
+		Timeouts: &pluginsdk.ResourceTimeout{
+			Read: pluginsdk.DefaultTimeout(5 * time.Minute),
 		},
 
-		Schema: map[string]*schema.Schema{
+		Schema: map[string]*pluginsdk.Schema{
 			"name": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Required: true,
 			},
 
@@ -35,21 +35,21 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			"location": azure.SchemaLocationForDataSource(),
 
 			"addon_profile": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"http_application_routing": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Computed: true,
 									},
 									"http_application_routing_zone_name": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 								},
@@ -57,33 +57,33 @@ func dataSourceKubernetesCluster() *schema.Resource {
 						},
 
 						"oms_agent": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Computed: true,
 									},
 									"log_analytics_workspace_id": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 									"oms_agent_identity": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Computed: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
 												"client_id": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Computed: true,
 												},
 												"object_id": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Computed: true,
 												},
 												"user_assigned_identity_id": {
-													Type:     schema.TypeString,
+													Type:     pluginsdk.TypeString,
 													Computed: true,
 												},
 											},
@@ -94,12 +94,12 @@ func dataSourceKubernetesCluster() *schema.Resource {
 						},
 
 						"kube_dashboard": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Computed: true,
 									},
 								},
@@ -107,13 +107,62 @@ func dataSourceKubernetesCluster() *schema.Resource {
 						},
 
 						"azure_policy": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"enabled": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Computed: true,
+									},
+								},
+							},
+						},
+
+						"ingress_application_gateway": {
+							Type:     pluginsdk.TypeList,
+							Computed: true,
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
+									"enabled": {
+										Type:     pluginsdk.TypeBool,
+										Computed: true,
+									},
+									"gateway_id": {
+										Type:     pluginsdk.TypeString,
+										Computed: true,
+									},
+									"effective_gateway_id": {
+										Type:     pluginsdk.TypeString,
+										Computed: true,
+									},
+									"subnet_cidr": {
+										Type:     pluginsdk.TypeString,
+										Computed: true,
+									},
+									"subnet_id": {
+										Type:     pluginsdk.TypeString,
+										Computed: true,
+									},
+									"ingress_application_gateway_identity": {
+										Type:     pluginsdk.TypeList,
+										Computed: true,
+										Elem: &pluginsdk.Resource{
+											Schema: map[string]*pluginsdk.Schema{
+												"client_id": {
+													Type:     pluginsdk.TypeString,
+													Computed: true,
+												},
+												"object_id": {
+													Type:     pluginsdk.TypeString,
+													Computed: true,
+												},
+												"user_assigned_identity_id": {
+													Type:     pluginsdk.TypeString,
+													Computed: true,
+												},
+											},
+										},
 									},
 								},
 							},
@@ -123,159 +172,166 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"agent_pool_profile": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"name": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"count": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Computed: true,
 						},
 
 						"max_count": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Computed: true,
 						},
 
 						"min_count": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Computed: true,
 						},
 
 						"enable_auto_scaling": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Computed: true,
 						},
 
 						"availability_zones": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 
 						"vm_size": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"tags": tags.SchemaDataSource(),
 
 						"os_disk_size_gb": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Computed: true,
 						},
 
 						"vnet_subnet_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"os_type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"orchestrator_version": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"max_pods": {
-							Type:     schema.TypeInt,
+							Type:     pluginsdk.TypeInt,
 							Computed: true,
 						},
 
 						"node_labels": {
-							Type:     schema.TypeMap,
+							Type:     pluginsdk.TypeMap,
 							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
+							Elem: &pluginsdk.Schema{
+								Type: pluginsdk.TypeString,
 							},
 						},
 
 						"node_taints": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Elem:     &pluginsdk.Schema{Type: pluginsdk.TypeString},
 						},
 
 						"enable_node_public_ip": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Computed: true,
 						},
+
+						"node_public_ip_prefix_id": {
+							Type:     pluginsdk.TypeString,
+							Computed: true,
+						},
+
+						"upgrade_settings": upgradeSettingsForDataSourceSchema(),
 					},
 				},
 			},
 
 			"dns_prefix": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"fqdn": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"api_server_authorized_ip_ranges": {
-				Type:     schema.TypeSet,
+				Type:     pluginsdk.TypeSet,
 				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+				Elem: &pluginsdk.Schema{
+					Type: pluginsdk.TypeString,
 				},
 			},
 
 			"disk_encryption_set_id": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"private_link_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Computed: true,
 			},
 
 			"private_cluster_enabled": {
-				Type:     schema.TypeBool,
+				Type:     pluginsdk.TypeBool,
 				Computed: true, // TODO -- remove this when deprecation resolves
 			},
 
 			"private_fqdn": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"type": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"user_assigned_identity_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"principal_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"tenant_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -283,39 +339,39 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"kubernetes_version": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"kube_admin_config": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"host": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"username": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"password": {
-							Type:      schema.TypeString,
+							Type:      pluginsdk.TypeString,
 							Computed:  true,
 							Sensitive: true,
 						},
 						"client_certificate": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"client_key": {
-							Type:      schema.TypeString,
+							Type:      pluginsdk.TypeString,
 							Computed:  true,
 							Sensitive: true,
 						},
 						"cluster_ca_certificate": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -323,40 +379,40 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"kube_admin_config_raw": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"kube_config": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"host": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"username": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"password": {
-							Type:      schema.TypeString,
+							Type:      pluginsdk.TypeString,
 							Computed:  true,
 							Sensitive: true,
 						},
 						"client_certificate": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"client_key": {
-							Type:      schema.TypeString,
+							Type:      pluginsdk.TypeString,
 							Computed:  true,
 							Sensitive: true,
 						},
 						"cluster_ca_certificate": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -364,26 +420,26 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"kube_config_raw": {
-				Type:      schema.TypeString,
+				Type:      pluginsdk.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
 			"kubelet_identity": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"client_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"object_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"user_assigned_identity_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -391,22 +447,22 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"linux_profile": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"admin_username": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 						"ssh_key": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
 
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"key_data": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 								},
@@ -417,12 +473,12 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"windows_profile": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"admin_username": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -430,42 +486,42 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"network_profile": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"network_plugin": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"network_policy": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"service_cidr": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"dns_service_ip": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"docker_bridge_cidr": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"pod_cidr": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 
 						"load_balancer_sku": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -473,49 +529,49 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"node_resource_group": {
-				Type:     schema.TypeString,
+				Type:     pluginsdk.TypeString,
 				Computed: true,
 			},
 
 			"role_based_access_control": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"enabled": {
-							Type:     schema.TypeBool,
+							Type:     pluginsdk.TypeBool,
 							Computed: true,
 						},
 						"azure_active_directory": {
-							Type:     schema.TypeList,
+							Type:     pluginsdk.TypeList,
 							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
+							Elem: &pluginsdk.Resource{
+								Schema: map[string]*pluginsdk.Schema{
 									"admin_group_object_ids": {
-										Type:     schema.TypeList,
+										Type:     pluginsdk.TypeList,
 										Computed: true,
-										Elem: &schema.Schema{
-											Type: schema.TypeString,
+										Elem: &pluginsdk.Schema{
+											Type: pluginsdk.TypeString,
 										},
 									},
 
 									"client_app_id": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 
 									"managed": {
-										Type:     schema.TypeBool,
+										Type:     pluginsdk.TypeBool,
 										Computed: true,
 									},
 
 									"server_app_id": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 
 									"tenant_id": {
-										Type:     schema.TypeString,
+										Type:     pluginsdk.TypeString,
 										Computed: true,
 									},
 								},
@@ -526,12 +582,12 @@ func dataSourceKubernetesCluster() *schema.Resource {
 			},
 
 			"service_principal": {
-				Type:     schema.TypeList,
+				Type:     pluginsdk.TypeList,
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
 						"client_id": {
-							Type:     schema.TypeString,
+							Type:     pluginsdk.TypeString,
 							Computed: true,
 						},
 					},
@@ -543,7 +599,7 @@ func dataSourceKubernetesCluster() *schema.Resource {
 	}
 }
 
-func dataSourceKubernetesClusterRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceKubernetesClusterRead(d *pluginsdk.ResourceData, meta interface{}) error {
 	client := meta.(*clients.Client).Containers.KubernetesClustersClient
 	ctx, cancel := timeouts.ForRead(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -784,7 +840,7 @@ func flattenKubernetesClusterDataSourceAddonProfiles(profile map[string]*contain
 			workspaceID = *v
 		}
 
-		omsagentIdentity, err := flattenKubernetesClusterDataSourceOmsAgentIdentityProfile(omsAgent.Identity)
+		omsagentIdentity, err := flattenKubernetesClusterDataSourceAddOnIdentityProfile(omsAgent.Identity)
 		if err != nil {
 			return err
 		}
@@ -825,10 +881,54 @@ func flattenKubernetesClusterDataSourceAddonProfiles(profile map[string]*contain
 	}
 	values["azure_policy"] = azurePolicies
 
+	ingressApplicationGateways := make([]interface{}, 0)
+	if ingressApplicationGateway := kubernetesAddonProfileLocate(profile, ingressApplicationGatewayKey); ingressApplicationGateway != nil {
+		enabled := false
+		if enabledVal := ingressApplicationGateway.Enabled; enabledVal != nil {
+			enabled = *enabledVal
+		}
+
+		gatewayId := ""
+		if v := kubernetesAddonProfilelocateInConfig(ingressApplicationGateway.Config, "applicationGatewayId"); v != nil {
+			gatewayId = *v
+		}
+
+		effectiveGatewayId := ""
+		if v := kubernetesAddonProfilelocateInConfig(ingressApplicationGateway.Config, "effectiveApplicationGatewayId"); v != nil {
+			effectiveGatewayId = *v
+		}
+
+		subnetCIDR := ""
+		if v := kubernetesAddonProfilelocateInConfig(ingressApplicationGateway.Config, "subnetCIDR"); v != nil {
+			subnetCIDR = *v
+		}
+
+		subnetId := ""
+		if v := kubernetesAddonProfilelocateInConfig(ingressApplicationGateway.Config, "subnetId"); v != nil {
+			subnetId = *v
+		}
+
+		ingressApplicationGatewayIdentity, err := flattenKubernetesClusterDataSourceAddOnIdentityProfile(ingressApplicationGateway.Identity)
+		if err != nil {
+			return err
+		}
+
+		output := map[string]interface{}{
+			"enabled":                              enabled,
+			"gateway_id":                           gatewayId,
+			"effective_gateway_id":                 effectiveGatewayId,
+			"subnet_cidr":                          subnetCIDR,
+			"subnet_id":                            subnetId,
+			"ingress_application_gateway_identity": ingressApplicationGatewayIdentity,
+		}
+		ingressApplicationGateways = append(ingressApplicationGateways, output)
+	}
+	values["ingress_application_gateway"] = ingressApplicationGateways
+
 	return []interface{}{values}
 }
 
-func flattenKubernetesClusterDataSourceOmsAgentIdentityProfile(profile *containerservice.ManagedClusterAddonProfileIdentity) ([]interface{}, error) {
+func flattenKubernetesClusterDataSourceAddOnIdentityProfile(profile *containerservice.ManagedClusterAddonProfileIdentity) ([]interface{}, error) {
 	if profile == nil {
 		return []interface{}{}, nil
 	}
@@ -870,75 +970,103 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 	}
 
 	for _, profile := range *input {
-		agentPoolProfile := make(map[string]interface{})
-
-		if profile.Type != "" {
-			agentPoolProfile["type"] = string(profile.Type)
-		}
-
+		count := 0
 		if profile.Count != nil {
-			agentPoolProfile["count"] = int(*profile.Count)
+			count = int(*profile.Count)
 		}
 
-		if profile.MinCount != nil {
-			agentPoolProfile["min_count"] = int(*profile.MinCount)
-		}
-
-		if profile.MaxCount != nil {
-			agentPoolProfile["max_count"] = int(*profile.MaxCount)
-		}
-
-		if profile.EnableAutoScaling != nil {
-			agentPoolProfile["enable_auto_scaling"] = *profile.EnableAutoScaling
-		}
-
-		agentPoolProfile["availability_zones"] = utils.FlattenStringSlice(profile.AvailabilityZones)
-
-		if profile.Name != nil {
-			agentPoolProfile["name"] = *profile.Name
-		}
-
-		if profile.VMSize != "" {
-			agentPoolProfile["vm_size"] = string(profile.VMSize)
-		}
-
-		if profile.OsDiskSizeGB != nil {
-			agentPoolProfile["os_disk_size_gb"] = int(*profile.OsDiskSizeGB)
-		}
-
-		if profile.VnetSubnetID != nil {
-			agentPoolProfile["vnet_subnet_id"] = *profile.VnetSubnetID
-		}
-
-		if profile.OsType != "" {
-			agentPoolProfile["os_type"] = string(profile.OsType)
-		}
-
-		if profile.OrchestratorVersion != nil && *profile.OrchestratorVersion != "" {
-			agentPoolProfile["orchestrator_version"] = *profile.OrchestratorVersion
-		}
-
-		if profile.MaxPods != nil {
-			agentPoolProfile["max_pods"] = int(*profile.MaxPods)
-		}
-
-		if profile.NodeLabels != nil {
-			agentPoolProfile["node_labels"] = profile.NodeLabels
-		}
-
-		if profile.NodeTaints != nil {
-			agentPoolProfile["node_taints"] = *profile.NodeTaints
-		}
-
+		enableNodePublicIP := false
 		if profile.EnableNodePublicIP != nil {
-			agentPoolProfile["enable_node_public_ip"] = *profile.EnableNodePublicIP
+			enableNodePublicIP = *profile.EnableNodePublicIP
 		}
 
-		if profile.Tags != nil {
-			agentPoolProfile["tags"] = tags.Flatten(profile.Tags)
+		minCount := 0
+		if profile.MinCount != nil {
+			minCount = int(*profile.MinCount)
 		}
 
-		agentPoolProfiles = append(agentPoolProfiles, agentPoolProfile)
+		maxCount := 0
+		if profile.MaxCount != nil {
+			maxCount = int(*profile.MaxCount)
+		}
+
+		enableAutoScaling := false
+		if profile.EnableAutoScaling != nil {
+			enableAutoScaling = *profile.EnableAutoScaling
+		}
+
+		name := ""
+		if profile.Name != nil {
+			name = *profile.Name
+		}
+
+		nodePublicIPPrefixID := ""
+		if profile.NodePublicIPPrefixID != nil {
+			nodePublicIPPrefixID = *profile.NodePublicIPPrefixID
+		}
+
+		osDiskSizeGb := 0
+		if profile.OsDiskSizeGB != nil {
+			osDiskSizeGb = int(*profile.OsDiskSizeGB)
+		}
+
+		vnetSubnetId := ""
+		if profile.VnetSubnetID != nil {
+			vnetSubnetId = *profile.VnetSubnetID
+		}
+
+		orchestratorVersion := ""
+		if profile.OrchestratorVersion != nil && *profile.OrchestratorVersion != "" {
+			orchestratorVersion = *profile.OrchestratorVersion
+		}
+
+		maxPods := 0
+		if profile.MaxPods != nil {
+			maxPods = int(*profile.MaxPods)
+		}
+
+		nodeLabels := make(map[string]string)
+		if profile.NodeLabels != nil {
+			for k, v := range profile.NodeLabels {
+				if v == nil {
+					continue
+				}
+
+				nodeLabels[k] = *v
+			}
+		}
+
+		nodeTaints := make([]string, 0)
+		if profile.NodeTaints != nil {
+			nodeTaints = *profile.NodeTaints
+		}
+
+		vmSize := ""
+		if profile.VMSize != nil {
+			vmSize = *profile.VMSize
+		}
+
+		agentPoolProfiles = append(agentPoolProfiles, map[string]interface{}{
+			"availability_zones":       utils.FlattenStringSlice(profile.AvailabilityZones),
+			"count":                    count,
+			"enable_auto_scaling":      enableAutoScaling,
+			"enable_node_public_ip":    enableNodePublicIP,
+			"max_count":                maxCount,
+			"max_pods":                 maxPods,
+			"min_count":                minCount,
+			"name":                     name,
+			"node_labels":              nodeLabels,
+			"node_public_ip_prefix_id": nodePublicIPPrefixID,
+			"node_taints":              nodeTaints,
+			"orchestrator_version":     orchestratorVersion,
+			"os_disk_size_gb":          osDiskSizeGb,
+			"os_type":                  string(profile.OsType),
+			"tags":                     tags.Flatten(profile.Tags),
+			"type":                     string(profile.Type),
+			"upgrade_settings":         flattenUpgradeSettings(profile.UpgradeSettings),
+			"vm_size":                  vmSize,
+			"vnet_subnet_id":           vnetSubnetId,
+		})
 	}
 
 	return agentPoolProfiles

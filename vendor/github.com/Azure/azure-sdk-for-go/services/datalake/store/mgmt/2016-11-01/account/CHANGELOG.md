@@ -1,10 +1,22 @@
-Generated from https://github.com/Azure/azure-rest-api-specs/tree/3c764635e7d442b3e74caf593029fcd440b3ef82
+# Change History
 
-Code generator @microsoft.azure/autorest.go@~2.1.161
+## Additive Changes
 
-## Breaking Changes
+### New Funcs
 
-- Function `NewFirewallRuleListResultPage` parameter(s) have been changed from `(func(context.Context, FirewallRuleListResult) (FirewallRuleListResult, error))` to `(FirewallRuleListResult, func(context.Context, FirewallRuleListResult) (FirewallRuleListResult, error))`
-- Function `NewVirtualNetworkRuleListResultPage` parameter(s) have been changed from `(func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))` to `(VirtualNetworkRuleListResult, func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))`
-- Function `NewDataLakeStoreAccountListResultPage` parameter(s) have been changed from `(func(context.Context, DataLakeStoreAccountListResult) (DataLakeStoreAccountListResult, error))` to `(DataLakeStoreAccountListResult, func(context.Context, DataLakeStoreAccountListResult) (DataLakeStoreAccountListResult, error))`
-- Function `NewTrustedIDProviderListResultPage` parameter(s) have been changed from `(func(context.Context, TrustedIDProviderListResult) (TrustedIDProviderListResult, error))` to `(TrustedIDProviderListResult, func(context.Context, TrustedIDProviderListResult) (TrustedIDProviderListResult, error))`
+1. CapabilityInformation.MarshalJSON() ([]byte, error)
+1. DataLakeStoreAccountListResult.MarshalJSON() ([]byte, error)
+1. DataLakeStoreAccountProperties.MarshalJSON() ([]byte, error)
+1. DataLakeStoreAccountPropertiesBasic.MarshalJSON() ([]byte, error)
+1. FirewallRuleListResult.MarshalJSON() ([]byte, error)
+1. FirewallRuleProperties.MarshalJSON() ([]byte, error)
+1. NameAvailabilityInformation.MarshalJSON() ([]byte, error)
+1. OperationDisplay.MarshalJSON() ([]byte, error)
+1. OperationListResult.MarshalJSON() ([]byte, error)
+1. SubResource.MarshalJSON() ([]byte, error)
+1. TrustedIDProviderListResult.MarshalJSON() ([]byte, error)
+1. TrustedIDProviderProperties.MarshalJSON() ([]byte, error)
+1. Usage.MarshalJSON() ([]byte, error)
+1. UsageName.MarshalJSON() ([]byte, error)
+1. VirtualNetworkRuleListResult.MarshalJSON() ([]byte, error)
+1. VirtualNetworkRuleProperties.MarshalJSON() ([]byte, error)

@@ -6,13 +6,11 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/securityinsight/mgmt/2019-01-01-preview/securityinsight"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/sentinel/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -22,10 +20,10 @@ func TestAccSentinelAlertRuleFusion_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_fusion", "test")
 	r := SentinelAlertRuleFusionResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -37,10 +35,10 @@ func TestAccSentinelAlertRuleFusion_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_fusion", "test")
 	r := SentinelAlertRuleFusionResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -52,24 +50,24 @@ func TestAccSentinelAlertRuleFusion_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_fusion", "test")
 	r := SentinelAlertRuleFusionResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -81,10 +79,10 @@ func TestAccSentinelAlertRuleFusion_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_fusion", "test")
 	r := SentinelAlertRuleFusionResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -92,7 +90,7 @@ func TestAccSentinelAlertRuleFusion_requiresImport(t *testing.T) {
 	})
 }
 
-func (r SentinelAlertRuleFusionResource) Exists(ctx context.Context, client *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (r SentinelAlertRuleFusionResource) Exists(ctx context.Context, client *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	alertRuleClient := client.Sentinel.AlertRulesClient
 	id, err := parse.AlertRuleID(state.ID)
 	if err != nil {
@@ -122,12 +120,12 @@ func (r SentinelAlertRuleFusionResource) basic(data acceptance.TestData) string 
 
 data "azurerm_sentinel_alert_rule_template" "test" {
   display_name               = "Advanced Multistage Attack Detection"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
 }
 
 resource "azurerm_sentinel_alert_rule_fusion" "test" {
   name                       = "acctest-SentinelAlertRule-Fusion-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   alert_rule_template_guid   = data.azurerm_sentinel_alert_rule_template.test.name
 }
 `, r.template(data), data.RandomInteger)
@@ -139,12 +137,12 @@ func (r SentinelAlertRuleFusionResource) complete(data acceptance.TestData) stri
 
 data "azurerm_sentinel_alert_rule_template" "test" {
   display_name               = "Advanced Multistage Attack Detection"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
 }
 
 resource "azurerm_sentinel_alert_rule_fusion" "test" {
   name                       = "acctest-SentinelAlertRule-Fusion-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   alert_rule_template_guid   = data.azurerm_sentinel_alert_rule_template.test.name
   enabled                    = false
 }
@@ -179,6 +177,19 @@ resource "azurerm_log_analytics_workspace" "test" {
   location            = azurerm_resource_group.test.location
   resource_group_name = azurerm_resource_group.test.name
   sku                 = "PerGB2018"
+}
+
+resource "azurerm_log_analytics_solution" "test" {
+  solution_name         = "SecurityInsights"
+  location              = azurerm_resource_group.test.location
+  resource_group_name   = azurerm_resource_group.test.name
+  workspace_resource_id = azurerm_log_analytics_workspace.test.id
+  workspace_name        = azurerm_log_analytics_workspace.test.name
+
+  plan {
+    publisher = "Microsoft"
+    product   = "OMSGallery/SecurityInsights"
+  }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
 }

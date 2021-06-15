@@ -1,10 +1,19 @@
-Generated from https://github.com/Azure/azure-rest-api-specs/tree/3c764635e7d442b3e74caf593029fcd440b3ef82
+# Change History
 
-Code generator @microsoft.azure/autorest.go@~2.1.161
+## Additive Changes
 
-## Breaking Changes
+### New Funcs
 
-- Function `NewPrivateLinkResourceListResultPage` parameter(s) have been changed from `(func(context.Context, PrivateLinkResourceListResult) (PrivateLinkResourceListResult, error))` to `(PrivateLinkResourceListResult, func(context.Context, PrivateLinkResourceListResult) (PrivateLinkResourceListResult, error))`
-- Function `NewPrivateEndpointConnectionListResultPage` parameter(s) have been changed from `(func(context.Context, PrivateEndpointConnectionListResult) (PrivateEndpointConnectionListResult, error))` to `(PrivateEndpointConnectionListResult, func(context.Context, PrivateEndpointConnectionListResult) (PrivateEndpointConnectionListResult, error))`
-- Function `NewServerKeyListResultPage` parameter(s) have been changed from `(func(context.Context, ServerKeyListResult) (ServerKeyListResult, error))` to `(ServerKeyListResult, func(context.Context, ServerKeyListResult) (ServerKeyListResult, error))`
-- Function `NewVirtualNetworkRuleListResultPage` parameter(s) have been changed from `(func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))` to `(VirtualNetworkRuleListResult, func(context.Context, VirtualNetworkRuleListResult) (VirtualNetworkRuleListResult, error))`
+1. AzureEntityResource.MarshalJSON() ([]byte, error)
+1. ErrorAdditionalInfo.MarshalJSON() ([]byte, error)
+1. ErrorResponse.MarshalJSON() ([]byte, error)
+1. OperationDisplay.MarshalJSON() ([]byte, error)
+1. PrivateEndpointConnectionListResult.MarshalJSON() ([]byte, error)
+1. PrivateLinkResource.MarshalJSON() ([]byte, error)
+1. PrivateLinkResourceListResult.MarshalJSON() ([]byte, error)
+1. PrivateLinkResourceProperties.MarshalJSON() ([]byte, error)
+1. ProxyResource.MarshalJSON() ([]byte, error)
+1. Resource.MarshalJSON() ([]byte, error)
+1. ServerKeyListResult.MarshalJSON() ([]byte, error)
+1. ServerPrivateEndpointConnection.MarshalJSON() ([]byte, error)
+1. VirtualNetworkRuleListResult.MarshalJSON() ([]byte, error)

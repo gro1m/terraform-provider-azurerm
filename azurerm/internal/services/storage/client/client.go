@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
+	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2021-01-01/storage"
 	"github.com/Azure/azure-sdk-for-go/services/storagesync/mgmt/2020-03-01/storagesync"
 	"github.com/Azure/go-autorest/autorest"
 	az "github.com/Azure/go-autorest/autorest/azure"
@@ -31,8 +31,10 @@ type Client struct {
 	BlobServicesClient          *storage.BlobServicesClient
 	BlobServicePropertiesClient *accounts.Client
 	CloudEndpointsClient        *storagesync.CloudEndpointsClient
+	BlobInventoryPoliciesClient *storage.BlobInventoryPoliciesClient
 	EncryptionScopesClient      *storage.EncryptionScopesClient
 	Environment                 az.Environment
+	ObjectReplicationClient     *storage.ObjectReplicationPoliciesClient
 	SyncServiceClient           *storagesync.ServicesClient
 	SyncGroupsClient            *storagesync.SyncGroupsClient
 	SubscriptionId              string
@@ -57,6 +59,9 @@ func NewClient(options *common.ClientOptions) *Client {
 	blobServicesClient := storage.NewBlobServicesClientWithBaseURI(options.ResourceManagerEndpoint, options.SubscriptionId)
 	options.ConfigureClient(&blobServicesClient.Client, options.ResourceManagerAuthorizer)
 
+	blobInventoryPoliciesClient := storage.NewBlobInventoryPoliciesClientWithBaseURI(options.ResourceManagerEndpoint, options.SubscriptionId)
+	options.ConfigureClient(&blobInventoryPoliciesClient.Client, options.ResourceManagerAuthorizer)
+
 	cloudEndpointsClient := storagesync.NewCloudEndpointsClientWithBaseURI(options.ResourceManagerEndpoint, options.SubscriptionId)
 	options.ConfigureClient(&cloudEndpointsClient.Client, options.ResourceManagerAuthorizer)
 
@@ -65,6 +70,9 @@ func NewClient(options *common.ClientOptions) *Client {
 
 	blobServicePropertiesClient := accounts.NewWithEnvironment(options.Environment)
 	options.ConfigureClient(&blobServicePropertiesClient.Client, options.StorageAuthorizer)
+
+	objectReplicationPolicyClient := storage.NewObjectReplicationPoliciesClientWithBaseURI(options.ResourceManagerEndpoint, options.SubscriptionId)
+	options.ConfigureClient(&objectReplicationPolicyClient.Client, options.ResourceManagerAuthorizer)
 
 	syncServiceClient := storagesync.NewServicesClientWithBaseURI(options.ResourceManagerEndpoint, options.SubscriptionId)
 	options.ConfigureClient(&syncServiceClient.Client, options.ResourceManagerAuthorizer)
@@ -81,9 +89,11 @@ func NewClient(options *common.ClientOptions) *Client {
 		ManagementPoliciesClient:    &managementPoliciesClient,
 		BlobServicesClient:          &blobServicesClient,
 		BlobServicePropertiesClient: &blobServicePropertiesClient,
+		BlobInventoryPoliciesClient: &blobInventoryPoliciesClient,
 		CloudEndpointsClient:        &cloudEndpointsClient,
 		EncryptionScopesClient:      &encryptionScopesClient,
 		Environment:                 options.Environment,
+		ObjectReplicationClient:     &objectReplicationPolicyClient,
 		SubscriptionId:              options.SubscriptionId,
 		SyncServiceClient:           &syncServiceClient,
 		SyncGroupsClient:            &syncGroupsClient,

@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/apimanagement/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -21,10 +20,10 @@ func TestAccApiManagementCustomDomain_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_api_management_custom_domain", "test")
 	r := ApiManagementCustomDomainResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -36,10 +35,10 @@ func TestAccApiManagementCustomDomain_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_api_management_custom_domain", "test")
 	r := ApiManagementCustomDomainResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -51,39 +50,31 @@ func TestAccApiManagementCustomDomain_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_api_management_custom_domain", "test")
 	r := ApiManagementCustomDomainResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.proxyOnly(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.developerPortalOnly(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
-		data.ImportStep(),
-		{
-			Config: r.builtinProxyOnly(data),
-			Check: resource.ComposeTestCheckFunc(
-				check.That(data.ResourceName).ExistsInAzure(r),
-			),
-		},
-		data.ImportStep(),
 	})
 }
 
-func (ApiManagementCustomDomainResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (ApiManagementCustomDomainResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.CustomDomainID(state.ID)
 	if err != nil {
 		return nil, err
@@ -107,10 +98,6 @@ resource "azurerm_api_management_custom_domain" "test" {
   api_management_id = azurerm_api_management.test.id
 
   proxy {
-    host_name = "${azurerm_api_management.test.name}.azure-api.net"
-  }
-
-  proxy {
     host_name    = "api.example.com"
     key_vault_id = azurerm_key_vault_certificate.test.secret_id
   }
@@ -131,10 +118,6 @@ resource "azurerm_api_management_custom_domain" "test" {
   api_management_id = azurerm_api_management.test.id
 
   proxy {
-    host_name = "${azurerm_api_management.test.name}.azure-api.net"
-  }
-
-  proxy {
     host_name    = "api.example.com"
     key_vault_id = azurerm_key_vault_certificate.test.secret_id
   }
@@ -149,27 +132,9 @@ func (r ApiManagementCustomDomainResource) developerPortalOnly(data acceptance.T
 resource "azurerm_api_management_custom_domain" "test" {
   api_management_id = azurerm_api_management.test.id
 
-  proxy {
-    host_name = "${azurerm_api_management.test.name}.azure-api.net"
-  }
-
   developer_portal {
     host_name    = "portal.example.com"
     key_vault_id = azurerm_key_vault_certificate.test.secret_id
-  }
-}
-`, r.template(data))
-}
-
-func (r ApiManagementCustomDomainResource) builtinProxyOnly(data acceptance.TestData) string {
-	return fmt.Sprintf(`
-%s
-
-resource "azurerm_api_management_custom_domain" "test" {
-  api_management_id = azurerm_api_management.test.id
-
-  proxy {
-    host_name = "${azurerm_api_management.test.name}.azure-api.net"
   }
 }
 `, r.template(data))
@@ -181,10 +146,6 @@ func (r ApiManagementCustomDomainResource) requiresImport(data acceptance.TestDa
 
 resource "azurerm_api_management_custom_domain" "import" {
   api_management_id = azurerm_api_management_custom_domain.test.api_management_id
-
-  proxy {
-    host_name = "${azurerm_api_management.test.name}.azure-api.net"
-  }
 
   proxy {
     host_name    = "api.example.com"
@@ -243,6 +204,7 @@ resource "azurerm_key_vault" "test" {
       "delete",
       "get",
       "update",
+      "purge",
     ]
 
     key_permissions = [

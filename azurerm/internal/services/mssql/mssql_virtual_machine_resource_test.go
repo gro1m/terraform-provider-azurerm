@@ -3,16 +3,15 @@ package mssql_test
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/mssql/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -22,10 +21,10 @@ func TestAccMsSqlVirtualMachine_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
 	r := MsSqlVirtualMachineResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -37,10 +36,10 @@ func TestAccMsSqlVirtualMachine_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
 	r := MsSqlVirtualMachineResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -52,17 +51,17 @@ func TestAccMsSqlVirtualMachine_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
 	r := MsSqlVirtualMachineResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep("sql_connectivity_update_password", "sql_connectivity_update_username"),
 		{
 			Config: r.update(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -70,21 +69,56 @@ func TestAccMsSqlVirtualMachine_complete(t *testing.T) {
 	})
 }
 
-func TestAccMsSqlVirtualMachine_withAutoPatching(t *testing.T) {
+func TestAccMsSqlVirtualMachine_autoBackup(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
 	r := MsSqlVirtualMachineResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.withAutoBackupAutoSchedule(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep("auto_backup.0.encryption_password",
+			"auto_backup.0.storage_account_access_key",
+			"auto_backup.0.storage_blob_endpoint"),
+		{
+			Config: r.withAutoBackupManualSchedule(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep("auto_backup.0.encryption_password",
+			"auto_backup.0.storage_account_access_key",
+			"auto_backup.0.storage_blob_endpoint"),
+		{
+			Config: r.withAutoBackupAutoSchedule(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep("auto_backup.0.encryption_password",
+			"auto_backup.0.storage_account_access_key",
+			"auto_backup.0.storage_blob_endpoint"),
+	})
+}
+
+func TestAccMsSqlVirtualMachine_autoPatching(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
+	r := MsSqlVirtualMachineResource{}
+
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.withAutoPatching(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.withAutoPatchingUpdated(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -92,51 +126,50 @@ func TestAccMsSqlVirtualMachine_withAutoPatching(t *testing.T) {
 	})
 }
 
-func TestAccMsSqlVirtualMachine_withKeyVault(t *testing.T) {
+func TestAccMsSqlVirtualMachine_keyVault(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
-
 	r := MsSqlVirtualMachineResource{}
 	value, err := uuid.GenerateUUID()
 	if err != nil {
 		t.Fatal(err)
 	}
+	loc, _ := time.LoadLocation("UTC")
+	keyVaultTime := time.Now().UTC().Add(time.Hour * 240).In(loc).Format("2006-01-02T15:04:00Z")
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
-			Config: r.withKeyVault(data, value),
-			Check: resource.ComposeTestCheckFunc(
+			Config: r.withKeyVault(data, value, keyVaultTime),
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
-				check.That(data.ResourceName).Key("key_vault_credential.0.name").MatchesRegex(regexp.MustCompile("/*:acctestkv")),
 			),
 		},
 		data.ImportStep("key_vault_credential.0.key_vault_url", "key_vault_credential.0.service_principal_name", "key_vault_credential.0.service_principal_secret"),
 
 		{
-			Config: r.withKeyVaultUpdated(data, value),
-			Check: resource.ComposeTestCheckFunc(
+			Config: r.withKeyVaultUpdated(data, value, keyVaultTime),
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
-				check.That(data.ResourceName).Key("key_vault_credential.0.name").MatchesRegex(regexp.MustCompile("/*:acctestkv2")),
 			),
 		},
 		data.ImportStep("key_vault_credential.0.key_vault_url", "key_vault_credential.0.service_principal_name", "key_vault_credential.0.service_principal_secret"),
 	})
 }
 
-func TestAccMsSqlVirtualMachine_withStorageConfiguration(t *testing.T) {
+func TestAccMsSqlVirtualMachine_storageConfiguration(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_mssql_virtual_machine", "test")
 	r := MsSqlVirtualMachineResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
-			Config: r.withStorageConfiguration(data),
-			Check: resource.ComposeTestCheckFunc(
+			Config: r.storageConfiguration(data),
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
-			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Config: r.storageConfigurationRevert(data),
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -144,7 +177,7 @@ func TestAccMsSqlVirtualMachine_withStorageConfiguration(t *testing.T) {
 	})
 }
 
-func (MsSqlVirtualMachineResource) Exists(ctx context.Context, client *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (MsSqlVirtualMachineResource) Exists(ctx context.Context, client *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.SqlVirtualMachineID(state.ID)
 	if err != nil {
 		return nil, err
@@ -164,8 +197,14 @@ func (MsSqlVirtualMachineResource) Exists(ctx context.Context, client *clients.C
 func (MsSqlVirtualMachineResource) template(data acceptance.TestData) string {
 	return fmt.Sprintf(`
 provider "azurerm" {
-  features {}
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = false
+    }
+  }
 }
+
+provider "azuread" {}
 
 resource "azurerm_resource_group" "test" {
   name     = "acctestRG-mssql-%[1]d"
@@ -183,7 +222,7 @@ resource "azurerm_subnet" "test" {
   name                 = "acctest-SN-%[1]d"
   resource_group_name  = azurerm_resource_group.test.name
   virtual_network_name = azurerm_virtual_network.test.name
-  address_prefix       = "10.0.0.0/24"
+  address_prefixes     = ["10.0.0.0/24"]
 }
 
 resource "azurerm_subnet_network_security_group_association" "test" {
@@ -202,20 +241,6 @@ resource "azurerm_network_security_group" "test" {
   name                = "acctest-NSG-%[1]d"
   location            = azurerm_resource_group.test.location
   resource_group_name = azurerm_resource_group.test.name
-}
-
-resource "azurerm_network_security_rule" "RDPRule" {
-  name                        = "RDPRule"
-  resource_group_name         = azurerm_resource_group.test.name
-  priority                    = 1000
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = 3389
-  source_address_prefix       = "167.220.255.0/25"
-  destination_address_prefix  = "*"
-  network_security_group_name = azurerm_network_security_group.test.name
 }
 
 resource "azurerm_network_security_rule" "MSSQLRule" {
@@ -369,7 +394,70 @@ resource "azurerm_mssql_virtual_machine" "test" {
 `, r.template(data))
 }
 
-func (r MsSqlVirtualMachineResource) withKeyVault(data acceptance.TestData, value string) string {
+func (r MsSqlVirtualMachineResource) withAutoBackupAutoSchedule(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%[1]s
+
+resource "azurerm_storage_account" "test" {
+  name                     = "unlikely23exst2acct%[2]s"
+  resource_group_name      = azurerm_resource_group.test.name
+  location                 = azurerm_resource_group.test.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_mssql_virtual_machine" "test" {
+  virtual_machine_id = azurerm_virtual_machine.test.id
+  sql_license_type   = "PAYG"
+
+  auto_backup {
+    encryption_enabled              = true
+    encryption_password             = "P@55w0rD!!%[2]s"
+    retention_period_in_days        = 23
+    storage_blob_endpoint           = azurerm_storage_account.test.primary_blob_endpoint
+    storage_account_access_key      = azurerm_storage_account.test.primary_access_key
+    system_databases_backup_enabled = false
+  }
+}
+`, r.template(data), data.RandomString)
+}
+
+func (r MsSqlVirtualMachineResource) withAutoBackupManualSchedule(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%[1]s
+
+resource "azurerm_storage_account" "test" {
+  name                     = "unlikely23exst2acct%[2]s"
+  resource_group_name      = azurerm_resource_group.test.name
+  location                 = azurerm_resource_group.test.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_mssql_virtual_machine" "test" {
+  virtual_machine_id = azurerm_virtual_machine.test.id
+  sql_license_type   = "PAYG"
+
+  auto_backup {
+    encryption_enabled              = true
+    encryption_password             = "P@55w0rD!!%[2]s"
+    retention_period_in_days        = 14
+    storage_blob_endpoint           = azurerm_storage_account.test.primary_blob_endpoint
+    storage_account_access_key      = azurerm_storage_account.test.primary_access_key
+    system_databases_backup_enabled = true
+
+    manual_schedule {
+      full_backup_frequency           = "Daily"
+      full_backup_start_hour          = 3
+      full_backup_window_in_hours     = 4
+      log_backup_frequency_in_minutes = 60
+    }
+  }
+}
+`, r.template(data), data.RandomString)
+}
+
+func (r MsSqlVirtualMachineResource) withKeyVault(data acceptance.TestData, value string, keyvaultTime string) string {
 	return fmt.Sprintf(`
 %[1]s
 
@@ -391,7 +479,6 @@ resource "azurerm_key_vault" "test" {
       "create",
       "delete",
       "get",
-      "purge",
       "update",
     ]
 
@@ -434,7 +521,7 @@ resource "azuread_service_principal" "test" {
 resource "azuread_service_principal_password" "test" {
   service_principal_id = azuread_service_principal.test.id
   value                = "%[3]s"
-  end_date_relative    = "240h"
+  end_date             = "%[4]s"
 }
 
 resource "azurerm_mssql_virtual_machine" "test" {
@@ -447,10 +534,10 @@ resource "azurerm_mssql_virtual_machine" "test" {
     service_principal_secret = azuread_service_principal_password.test.value
   }
 }
-`, r.template(data), data.RandomInteger, value)
+`, r.template(data), data.RandomInteger, value, keyvaultTime)
 }
 
-func (r MsSqlVirtualMachineResource) withKeyVaultUpdated(data acceptance.TestData, value string) string {
+func (r MsSqlVirtualMachineResource) withKeyVaultUpdated(data acceptance.TestData, value string, keyvaultTime string) string {
 	return fmt.Sprintf(`
 %[1]s
 
@@ -514,7 +601,7 @@ resource "azuread_service_principal" "test" {
 resource "azuread_service_principal_password" "test" {
   service_principal_id = azuread_service_principal.test.id
   value                = "%[3]s"
-  end_date_relative    = "240h"
+  end_date             = "%[4]s"
 }
 
 resource "azurerm_mssql_virtual_machine" "test" {
@@ -527,10 +614,10 @@ resource "azurerm_mssql_virtual_machine" "test" {
     service_principal_secret = azuread_service_principal_password.test.value
   }
 }
-`, r.template(data), data.RandomInteger, value)
+`, r.template(data), data.RandomInteger, value, keyvaultTime)
 }
 
-func (r MsSqlVirtualMachineResource) withStorageConfiguration(data acceptance.TestData) string {
+func (r MsSqlVirtualMachineResource) storageConfiguration(data acceptance.TestData) string {
 	return fmt.Sprintf(`
 %[1]s
 
@@ -573,6 +660,33 @@ resource "azurerm_mssql_virtual_machine" "test" {
       default_file_path = "F:\\SQLTemp"
     }
   }
+}
+`, r.template(data), data.RandomInteger)
+}
+
+func (r MsSqlVirtualMachineResource) storageConfigurationRevert(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%[1]s
+
+resource "azurerm_managed_disk" "test" {
+  name                 = "accmd-sqlvm-%[2]d"
+  location             = azurerm_resource_group.test.location
+  resource_group_name  = azurerm_resource_group.test.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 10
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "test" {
+  managed_disk_id    = azurerm_managed_disk.test.id
+  virtual_machine_id = azurerm_virtual_machine.test.id
+  lun                = "0"
+  caching            = "None"
+}
+
+resource "azurerm_mssql_virtual_machine" "test" {
+  virtual_machine_id = azurerm_virtual_machine.test.id
+  sql_license_type   = "PAYG"
 }
 `, r.template(data), data.RandomInteger)
 }

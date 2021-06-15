@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/securityinsight/mgmt/2019-01-01-preview/securityinsight"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/sentinel/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -22,10 +21,10 @@ func TestAccSentinelAlertRuleScheduled_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -37,10 +36,10 @@ func TestAccSentinelAlertRuleScheduled_complete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -52,24 +51,24 @@ func TestAccSentinelAlertRuleScheduled_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.complete(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -81,10 +80,10 @@ func TestAccSentinelAlertRuleScheduled_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -96,10 +95,10 @@ func TestAccSentinelAlertRuleScheduled_withAlertRuleTemplateGuid(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.alertRuleTemplateGuid(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -111,17 +110,17 @@ func TestAccSentinelAlertRuleScheduled_updateEventGroupingSetting(t *testing.T) 
 	data := acceptance.BuildTestData(t, "azurerm_sentinel_alert_rule_scheduled", "test")
 	r := SentinelAlertRuleScheduledResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.eventGroupingSetting(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
 		data.ImportStep(),
 		{
 			Config: r.updateEventGroupingSetting(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -129,7 +128,7 @@ func TestAccSentinelAlertRuleScheduled_updateEventGroupingSetting(t *testing.T) 
 	})
 }
 
-func (t SentinelAlertRuleScheduledResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t SentinelAlertRuleScheduledResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.AlertRuleID(state.ID)
 	if err != nil {
 		return nil, err
@@ -154,7 +153,7 @@ func (r SentinelAlertRuleScheduledResource) basic(data acceptance.TestData) stri
 
 resource "azurerm_sentinel_alert_rule_scheduled" "test" {
   name                       = "acctest-SentinelAlertRule-Sche-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   display_name               = "Some Rule"
   severity                   = "High"
   query                      = <<QUERY
@@ -173,7 +172,7 @@ func (r SentinelAlertRuleScheduledResource) complete(data acceptance.TestData) s
 
 resource "azurerm_sentinel_alert_rule_scheduled" "test" {
   name                       = "acctest-SentinelAlertRule-Sche-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   display_name               = "Updated Rule"
   description                = "Some Description"
   tactics                    = ["Collection", "CommandAndControl"]
@@ -225,7 +224,7 @@ func (r SentinelAlertRuleScheduledResource) alertRuleTemplateGuid(data acceptanc
 
 resource "azurerm_sentinel_alert_rule_scheduled" "test" {
   name                       = "acctest-SentinelAlertRule-Sche-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   display_name               = "Some Rule"
   severity                   = "Low"
   alert_rule_template_guid   = "65360bb0-8986-4ade-a89d-af3cf44d28aa"
@@ -245,7 +244,7 @@ func (r SentinelAlertRuleScheduledResource) eventGroupingSetting(data acceptance
 
 resource "azurerm_sentinel_alert_rule_scheduled" "test" {
   name                       = "acctest-SentinelAlertRule-Sche-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   display_name               = "Some Rule"
   severity                   = "Low"
   alert_rule_template_guid   = "65360bb0-8986-4ade-a89d-af3cf44d28aa"
@@ -269,7 +268,7 @@ func (r SentinelAlertRuleScheduledResource) updateEventGroupingSetting(data acce
 
 resource "azurerm_sentinel_alert_rule_scheduled" "test" {
   name                       = "acctest-SentinelAlertRule-Sche-%d"
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.test.id
+  log_analytics_workspace_id = azurerm_log_analytics_solution.test.workspace_resource_id
   display_name               = "Some Rule"
   severity                   = "Low"
   alert_rule_template_guid   = "65360bb0-8986-4ade-a89d-af3cf44d28aa"
@@ -303,6 +302,19 @@ resource "azurerm_log_analytics_workspace" "test" {
   location            = azurerm_resource_group.test.location
   resource_group_name = azurerm_resource_group.test.name
   sku                 = "PerGB2018"
+}
+
+resource "azurerm_log_analytics_solution" "test" {
+  solution_name         = "SecurityInsights"
+  location              = azurerm_resource_group.test.location
+  resource_group_name   = azurerm_resource_group.test.name
+  workspace_resource_id = azurerm_log_analytics_workspace.test.id
+  workspace_name        = azurerm_log_analytics_workspace.test.name
+
+  plan {
+    publisher = "Microsoft"
+    product   = "OMSGallery/SecurityInsights"
+  }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
 }

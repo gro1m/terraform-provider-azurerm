@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -21,10 +20,10 @@ func TestAccDataFactoryIntegrationRuntimeManaged_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_data_factory_integration_runtime_managed", "test")
 	r := IntegrationRuntimeManagedResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.basic(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 			),
 		},
@@ -36,10 +35,10 @@ func TestAccDataFactoryIntegrationRuntimeManaged_vnetIntegration(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_data_factory_integration_runtime_managed", "test")
 	r := IntegrationRuntimeManagedResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.vnetIntegration(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("vnet_integration.#").HasValue("1"),
 				check.That(data.ResourceName).Key("vnet_integration.0.vnet_id").Exists(),
@@ -54,10 +53,10 @@ func TestAccDataFactoryIntegrationRuntimeManaged_catalogInfo(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_data_factory_integration_runtime_managed", "test")
 	r := IntegrationRuntimeManagedResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.catalogInfo(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("catalog_info.#").HasValue("1"),
 				check.That(data.ResourceName).Key("catalog_info.0.server_endpoint").Exists(),
@@ -74,10 +73,10 @@ func TestAccDataFactoryIntegrationRuntimeManaged_customSetupScript(t *testing.T)
 	data := acceptance.BuildTestData(t, "azurerm_data_factory_integration_runtime_managed", "test")
 	r := IntegrationRuntimeManagedResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.customSetupScript(data),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("custom_setup_script.#").HasValue("1"),
 				check.That(data.ResourceName).Key("custom_setup_script.0.blob_container_uri").Exists(),
@@ -85,6 +84,21 @@ func TestAccDataFactoryIntegrationRuntimeManaged_customSetupScript(t *testing.T)
 			),
 		},
 		data.ImportStep("catalog_info.0.administrator_password", "custom_setup_script.0.sas_token"),
+	})
+}
+
+func TestAccDataFactoryIntegrationRuntimeManaged_aadAuth(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_data_factory_integration_runtime_managed", "test")
+	r := IntegrationRuntimeManagedResource{}
+
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.aadAuth(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
 	})
 }
 
@@ -279,7 +293,66 @@ resource "azurerm_data_factory_integration_runtime_managed" "test" {
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomString)
 }
 
-func (t IntegrationRuntimeManagedResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (IntegrationRuntimeManagedResource) aadAuth(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "test" {
+  name     = "acctestRG-df-%d"
+  location = "%s"
+}
+
+resource "azurerm_data_factory" "test" {
+  name                = "acctestdfirm%d"
+  location            = azurerm_resource_group.test.location
+  resource_group_name = azurerm_resource_group.test.name
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_sql_server" "test" {
+  name                         = "acctestsql%d"
+  resource_group_name          = azurerm_resource_group.test.name
+  location                     = azurerm_resource_group.test.location
+  version                      = "12.0"
+  administrator_login          = "ssis_catalog_admin"
+  administrator_login_password = "my-s3cret-p4ssword!"
+}
+
+data "azuread_service_principal" "test" {
+  display_name = azurerm_data_factory.test.name
+}
+
+resource "azurerm_sql_active_directory_administrator" "test" {
+  server_name         = azurerm_sql_server.test.name
+  resource_group_name = azurerm_resource_group.test.name
+  login               = azurerm_data_factory.test.name
+  tenant_id           = azurerm_data_factory.test.identity.0.tenant_id
+  object_id           = data.azuread_service_principal.test.application_id
+}
+
+resource "azurerm_data_factory_integration_runtime_managed" "test" {
+  name                = "managed-integration-runtime"
+  data_factory_name   = azurerm_data_factory.test.name
+  resource_group_name = azurerm_resource_group.test.name
+  location            = azurerm_resource_group.test.location
+  node_size           = "Standard_D8_v3"
+
+  catalog_info {
+    server_endpoint = azurerm_sql_server.test.fully_qualified_domain_name
+    pricing_tier    = "Basic"
+  }
+
+  depends_on = [azurerm_sql_active_directory_administrator.test]
+}
+`, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomInteger)
+}
+
+func (t IntegrationRuntimeManagedResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := azure.ParseAzureResourceID(state.ID)
 	if err != nil {
 		return nil, err

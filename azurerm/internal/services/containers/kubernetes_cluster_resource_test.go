@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/acceptance/check"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/containers/parse"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
@@ -20,7 +19,7 @@ type KubernetesClusterResource struct {
 
 var (
 	olderKubernetesVersion   = "1.18.14"
-	currentKubernetesVersion = "1.19.6"
+	currentKubernetesVersion = "1.19.9"
 )
 
 func TestAccKubernetes_all(t *testing.T) {
@@ -41,7 +40,7 @@ func TestAccKubernetes_all(t *testing.T) {
 	t.Skip("Skipping since this is being run Individually")
 }
 
-func (t KubernetesClusterResource) Exists(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) (*bool, error) {
+func (t KubernetesClusterResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
 	id, err := parse.ClusterID(state.ID)
 	if err != nil {
 		return nil, err
@@ -56,7 +55,7 @@ func (t KubernetesClusterResource) Exists(ctx context.Context, clients *clients.
 }
 
 func (KubernetesClusterResource) updateDefaultNodePoolAgentCount(nodeCount int) acceptance.ClientCheckFunc {
-	return func(ctx context.Context, clients *clients.Client, state *terraform.InstanceState) error {
+	return func(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) error {
 		nodePoolName := state.Attributes["default_node_pool.0.name"]
 		clusterName := state.Attributes["name"]
 		resourceGroup := state.Attributes["resource_group_name"]
@@ -98,10 +97,10 @@ func testAccKubernetesCluster_hostEncryption(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster", "test")
 	r := KubernetesClusterResource{}
 
-	data.ResourceTest(t, r, []resource.TestStep{
+	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
 			Config: r.hostEncryption(data, currentKubernetesVersion),
-			Check: resource.ComposeTestCheckFunc(
+			Check: acceptance.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("default_node_pool.0.enable_host_encryption").HasValue("true"),
 			),
@@ -139,4 +138,41 @@ resource "azurerm_kubernetes_cluster" "test" {
   }
 }
   `, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomInteger, controlPlaneVersion)
+}
+
+func (r KubernetesClusterResource) upgradeSettingsConfig(data acceptance.TestData, maxSurge string) string {
+	if maxSurge != "" {
+		maxSurge = fmt.Sprintf(`upgrade_settings {
+    max_surge = %q
+  }`, maxSurge)
+	}
+
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "test" {
+  name     = "acctestRG-aks-%d"
+  location = "%s"
+}
+
+resource "azurerm_kubernetes_cluster" "test" {
+  name                = "acctestaks%d"
+  location            = azurerm_resource_group.test.location
+  resource_group_name = azurerm_resource_group.test.name
+  dns_prefix          = "acctestaks%d"
+
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_DS2_v2"
+    %s
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+  `, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomInteger, maxSurge)
 }
